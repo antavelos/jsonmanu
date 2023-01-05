@@ -1049,6 +1049,35 @@ func TestPut(t *testing.T) {
 				},
 			},
 		},
+		{
+			path: "$.store..price",
+			data: map[string]any{
+				"store": map[string]any{
+					"books": []any{
+						map[string]any{"author": "Nietzsche", "title": "Book1", "price": 15},
+						map[string]any{"author": "Nietzsche", "title": "Book2", "price": 20},
+						map[string]any{"author": "Stirner", "title": "Book1", "price": 15},
+						map[string]any{"author": "Nietzsche", "title": "Book3", "price": 5},
+						map[string]any{"author": "Stirner", "title": "Book2", "price": 10},
+						map[string]any{"author": "Nietzsche", "title": "Book4", "price": 10},
+					},
+				},
+			},
+			value:         5,
+			expectedError: nil,
+			expectedUpdatedData: map[string]any{
+				"store": map[string]any{
+					"books": []any{
+						map[string]any{"author": "Nietzsche", "title": "Book1", "price": 5},
+						map[string]any{"author": "Nietzsche", "title": "Book2", "price": 5},
+						map[string]any{"author": "Stirner", "title": "Book1", "price": 5},
+						map[string]any{"author": "Nietzsche", "title": "Book3", "price": 5},
+						map[string]any{"author": "Stirner", "title": "Book2", "price": 5},
+						map[string]any{"author": "Nietzsche", "title": "Book4", "price": 5},
+					},
+				},
+			},
+		},
 	}
 
 	for i, tc := range testCases {

@@ -51,7 +51,7 @@ func parse(path string) ([]NodeDataManager, error) {
 	return nodes, nil
 }
 
-func get(data any, nodes []NodeDataManager) any {
+func walkNodes(data any, nodes []NodeDataManager) any {
 	withReccursiveDescent := false
 	for _, node := range nodes {
 		if node.GetName() == "*" {
@@ -93,7 +93,7 @@ func Get(data any, path string) (any, error) {
 		return nil, err
 	}
 
-	data = get(data, nodes)
+	data = walkNodes(data, nodes)
 
 	return data, nil
 }
@@ -105,18 +105,16 @@ func Put(data any, path string, value any) error {
 	}
 
 	nodesCount := len(nodes)
-	// handle reccursive descent Put() in case the previous of the last node is not known
-	// i.e. $..price
-	if nodesCount == 2 &&
-		nodes[0].GetName() == "" &&
-		!isArrayNode(nodes[1]) {
 
-		return mapPutDeep(data, nodes[1].GetName(), value)
+	// handle reccursive descent in case the last node is a leaf node and its previous one
+	// is not known, i.e. "$..price"
+	if nodes[nodesCount-2].GetName() == "" && !isArrayNode(nodes[nodesCount-1]) {
+		return mapPutDeep(data, nodes[nodesCount-1].GetName(), value)
 	}
 
 	allButLastNodes, lastNode := nodes[:nodesCount-1], nodes[nodesCount-1]
 
-	data = get(data, allButLastNodes)
+	data = walkNodes(data, allButLastNodes)
 
 	if isSlice(data) {
 		for _, item := range data.([]any) {
