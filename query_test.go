@@ -54,7 +54,7 @@ func TestSplitJsonPath(t *testing.T) {
 
 type JsonmanParseTestCase struct {
 	path          string
-	expectedNodes []NodeDataManager
+	expectedNodes []NodeDataAccessor
 	expectedError error
 }
 
@@ -72,7 +72,7 @@ func TestParse(t *testing.T) {
 		},
 		{
 			path: "$.books[0]",
-			expectedNodes: []NodeDataManager{
+			expectedNodes: []NodeDataAccessor{
 				ArrayIndexedNode{
 					ArrayNode: ArrayNode{Node: Node{Name: "books"}},
 					Indices:   []int{0},
@@ -82,7 +82,7 @@ func TestParse(t *testing.T) {
 		},
 		{
 			path: "$.library.books[*]",
-			expectedNodes: []NodeDataManager{
+			expectedNodes: []NodeDataAccessor{
 				Node{
 					Name: "library",
 				},
@@ -94,7 +94,7 @@ func TestParse(t *testing.T) {
 		},
 		{
 			path: "$.library.books[0]",
-			expectedNodes: []NodeDataManager{
+			expectedNodes: []NodeDataAccessor{
 				Node{
 					Name: "library",
 				},
@@ -107,7 +107,7 @@ func TestParse(t *testing.T) {
 		},
 		{
 			path: "$.library.books[0,1,2]",
-			expectedNodes: []NodeDataManager{
+			expectedNodes: []NodeDataAccessor{
 				Node{
 					Name: "library",
 				},
@@ -120,7 +120,7 @@ func TestParse(t *testing.T) {
 		},
 		{
 			path: "$.library.books[1:]",
-			expectedNodes: []NodeDataManager{
+			expectedNodes: []NodeDataAccessor{
 				Node{
 					Name: "library",
 				},
@@ -133,7 +133,7 @@ func TestParse(t *testing.T) {
 		},
 		{
 			path: "$.library.books[1:2]",
-			expectedNodes: []NodeDataManager{
+			expectedNodes: []NodeDataAccessor{
 				Node{
 					Name: "library",
 				},
@@ -147,7 +147,7 @@ func TestParse(t *testing.T) {
 		},
 		{
 			path: "$.library.books[:2]",
-			expectedNodes: []NodeDataManager{
+			expectedNodes: []NodeDataAccessor{
 				Node{
 					Name: "library",
 				},
@@ -160,7 +160,7 @@ func TestParse(t *testing.T) {
 		},
 		{
 			path: "$.library.books[?(@.price<10)]",
-			expectedNodes: []NodeDataManager{
+			expectedNodes: []NodeDataAccessor{
 				Node{
 					Name: "library",
 				},
@@ -175,7 +175,7 @@ func TestParse(t *testing.T) {
 		},
 		{
 			path: "$.library.books[?(@.isbn)]",
-			expectedNodes: []NodeDataManager{
+			expectedNodes: []NodeDataAccessor{
 				Node{
 					Name: "library",
 				},
@@ -190,7 +190,7 @@ func TestParse(t *testing.T) {
 		},
 		{
 			path: "$..books",
-			expectedNodes: []NodeDataManager{
+			expectedNodes: []NodeDataAccessor{
 				Node{
 					Name: "",
 				},
@@ -202,7 +202,7 @@ func TestParse(t *testing.T) {
 		},
 		{
 			path: "$..*",
-			expectedNodes: []NodeDataManager{
+			expectedNodes: []NodeDataAccessor{
 				Node{
 					Name: "",
 				},

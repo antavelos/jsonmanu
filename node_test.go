@@ -88,14 +88,14 @@ func TestNodeFromToken(t *testing.T) {
 	}
 }
 
-type NodeDataManagerGetTestCase struct {
-	manager      NodeDataManager
+type NodeDataAccessorGetTestCase struct {
+	manager      NodeDataAccessor
 	sourceData   any
 	expectedData any
 }
 
-type NodeDataManagerPutTestCase struct {
-	manager             NodeDataManager
+type NodeDataAccessorPutTestCase struct {
+	manager             NodeDataAccessor
 	sourceData          any
 	value               any
 	expectedError       error
@@ -103,7 +103,7 @@ type NodeDataManagerPutTestCase struct {
 }
 
 func TestNodeGet(t *testing.T) {
-	testCases := []NodeDataManagerGetTestCase{
+	testCases := []NodeDataAccessorGetTestCase{
 		{
 			manager:      Node{"books"},
 			sourceData:   map[string]any{"books": []any{1, 2, 3}},
@@ -132,7 +132,7 @@ func TestNodeGet(t *testing.T) {
 }
 
 func TestNodePut(t *testing.T) {
-	testCases := []NodeDataManagerPutTestCase{
+	testCases := []NodeDataAccessorPutTestCase{
 		{
 			manager:             Node{"price"},
 			sourceData:          map[string]any{"price": 10},
@@ -191,7 +191,7 @@ func TestNodePut(t *testing.T) {
 }
 
 func TestArrayIndexedNodeGet(t *testing.T) {
-	testCases := []NodeDataManagerGetTestCase{
+	testCases := []NodeDataAccessorGetTestCase{
 		{
 			manager: ArrayIndexedNode{
 				ArrayNode: ArrayNode{Node: Node{Name: "books"}},
@@ -245,7 +245,7 @@ func TestArrayIndexedNodeGet(t *testing.T) {
 }
 
 func TestArrayIndexedNodePut(t *testing.T) {
-	testCases := []NodeDataManagerPutTestCase{
+	testCases := []NodeDataAccessorPutTestCase{
 		{
 			manager: ArrayIndexedNode{
 				ArrayNode: ArrayNode{Node: Node{Name: "books"}},
@@ -293,7 +293,7 @@ func TestArrayIndexedNodePut(t *testing.T) {
 			},
 			sourceData:          map[string]any{"books": 1},
 			value:               100,
-			expectedError:       NodePutError(fmt.Sprintf("Value of key 'books' is not a slice: %#v", map[string]any{"books": 1})),
+			expectedError:       NodePutError(fmt.Sprintf("Value of key 'books' is not an array: %#v", map[string]any{"books": 1})),
 			expectedUpdatedData: map[string]any{"books": 1},
 		},
 	}
@@ -312,7 +312,7 @@ func TestArrayIndexedNodePut(t *testing.T) {
 }
 
 func TestArraySlicedNodeGet(t *testing.T) {
-	testCases := []NodeDataManagerGetTestCase{
+	testCases := []NodeDataAccessorGetTestCase{
 		{
 			manager: ArraySlicedNode{
 				ArrayNode: ArrayNode{Node: Node{Name: "books"}},
@@ -374,7 +374,7 @@ func TestArraySlicedNodeGet(t *testing.T) {
 }
 
 func TestArraySlicedNodePut(t *testing.T) {
-	testCases := []NodeDataManagerPutTestCase{
+	testCases := []NodeDataAccessorPutTestCase{
 		{
 			manager: ArraySlicedNode{
 				ArrayNode: ArrayNode{Node: Node{Name: "books"}},
@@ -456,7 +456,7 @@ func TestArraySlicedNodePut(t *testing.T) {
 			},
 			sourceData:          map[string]any{"books": 1},
 			value:               100,
-			expectedError:       NodePutError(fmt.Sprintf("Value of key 'books' is not a slice: %#v", map[string]any{"books": 1})),
+			expectedError:       NodePutError(fmt.Sprintf("Value of key 'books' is not an array: %#v", map[string]any{"books": 1})),
 			expectedUpdatedData: map[string]any{"books": 1},
 		},
 	}
@@ -475,7 +475,7 @@ func TestArraySlicedNodePut(t *testing.T) {
 }
 
 func TestArrayFilteredNodeGet(t *testing.T) {
-	testCases := []NodeDataManagerGetTestCase{
+	testCases := []NodeDataAccessorGetTestCase{
 		{
 			manager: ArrayFilteredNode{
 				ArrayNode: ArrayNode{Node: Node{Name: "books"}},
@@ -690,7 +690,7 @@ func TestArrayFilteredNodeGet(t *testing.T) {
 }
 
 func TestArrayFilteredNodePut(t *testing.T) {
-	testCases := []NodeDataManagerPutTestCase{
+	testCases := []NodeDataAccessorPutTestCase{
 		{
 			manager: ArrayFilteredNode{
 				ArrayNode: ArrayNode{Node: Node{Name: "books"}},

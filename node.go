@@ -23,10 +23,14 @@ const FILTERED_ARRAY_TOKEN_PATTERN = `^(?P<node>\w+)\[\?\(@\.(?P<key>\w+)((?P<op
 // empty or alphanumeric named nodes (object nodes)
 const SIMPLE_NODE_TOKEN_PATTERN = `^(?P<node>(\w*|\*))$`
 
-type NodeDataManager interface {
+type NamedNode interface {
+	GetName() string
+}
+
+type NodeDataAccessor interface {
+	NamedNode
 	Get(any) any
 	Put(any, any) error
-	GetName() string
 }
 
 type NodePutError string
@@ -103,7 +107,7 @@ func (node ArrayNode) validateSourceData(sourceData any) (any, error) {
 	}
 
 	if !isSlice(data) {
-		return nil, NodePutError(fmt.Sprintf("Value of key '%v' is not a slice: %#v", node.Node.Name, sourceData))
+		return nil, NodePutError(fmt.Sprintf("Value of key '%v' is not an array: %#v", node.Node.Name, sourceData))
 	}
 
 	return data, nil
@@ -362,7 +366,7 @@ func getMatchDictionary(patt string, s string) (dict MatchDictionary) {
 	return
 }
 
-func nodeFromToken(token string) NodeDataManager {
+func nodeFromToken(token string) NodeDataAccessor {
 	var dict map[string]string
 
 	dict = getMatchDictionary(ARRAY_TOKEN_PATTERN, token)
@@ -433,10 +437,46 @@ func nodeFromToken(token string) NodeDataManager {
 	return nil
 }
 
-func isArrayNode(node NodeDataManager) bool {
+func isArrayNode(node NodeDataAccessor) bool {
 	switch node.(type) {
 	case ArrayIndexedNode, ArraySlicedNode, ArrayFilteredNode:
 		return true
 	}
 	return false
+}
+
+func walkNodes(data any, nodes []NodeDataAccessor) any {
+	withReccursiveDescent := false
+	for _, node := range nodes {
+		if node.GetName() == "*" {
+			continue
+		}
+
+		if node.GetName() == "" {
+			withReccursiveDescent = true
+			continue
+		}
+
+		if isSlice(data) {
+			var idata []any
+			for _, item := range data.([]any) {
+				idata = append(idata, node.Get(item))
+			}
+			data = idata
+			continue
+		}
+
+		if withReccursiveDescent {
+			data = mapGetDeepFlattened(data, node.GetName())
+			if isArrayNode(node) {
+				dataWithKey := map[string]any{node.GetName(): data}
+				data = node.Get(dataWithKey)
+			}
+			continue
+		}
+
+		data = node.Get(data)
+	}
+
+	return data
 }

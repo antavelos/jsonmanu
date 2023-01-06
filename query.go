@@ -27,7 +27,7 @@ func splitJsonPath(path string) []string {
 	return tokens
 }
 
-func parse(path string) ([]NodeDataManager, error) {
+func parse(path string) ([]NodeDataAccessor, error) {
 	if !strings.HasPrefix(path, "$.") {
 		return nil, JsonPathError("JsonPath should start with '$.'")
 	}
@@ -38,7 +38,7 @@ func parse(path string) ([]NodeDataManager, error) {
 
 	tokens := splitJsonPath(path)
 
-	var nodes []NodeDataManager
+	var nodes []NodeDataAccessor
 	for i, token := range tokens[1:] {
 		node := nodeFromToken(token)
 		if node == nil {
@@ -49,42 +49,6 @@ func parse(path string) ([]NodeDataManager, error) {
 	}
 
 	return nodes, nil
-}
-
-func walkNodes(data any, nodes []NodeDataManager) any {
-	withReccursiveDescent := false
-	for _, node := range nodes {
-		if node.GetName() == "*" {
-			continue
-		}
-
-		if node.GetName() == "" {
-			withReccursiveDescent = true
-			continue
-		}
-
-		if isSlice(data) {
-			var idata []any
-			for _, item := range data.([]any) {
-				idata = append(idata, node.Get(item))
-			}
-			data = idata
-			continue
-		}
-
-		if withReccursiveDescent {
-			data = mapGetDeepFlattened(data, node.GetName())
-			if isArrayNode(node) {
-				dataWithKey := map[string]any{node.GetName(): data}
-				data = node.Get(dataWithKey)
-			}
-			continue
-		}
-
-		data = node.Get(data)
-	}
-
-	return data
 }
 
 func Get(data any, path string) (any, error) {
