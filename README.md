@@ -1,4 +1,5 @@
 # JSON MANipUlator
+[![Actions Status](https://github.com/antavelos/jsonmanu/workflows/Testing/badge.svg)](https://github.com/antavelos/jsonmanu/actions)
 
 **jsonmanu** is a Go library intended to be used a JSON data retrieval and update tool utilizing the
 [JSONPath](https://goessner.net/articles/JsonPath/) notation.
