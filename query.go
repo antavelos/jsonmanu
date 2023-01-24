@@ -13,6 +13,8 @@ func (jpe JsonPathError) Error() string {
 
 type JsonData map[string]any
 
+// splitJsonPath splits a string based on a `.` separator. However, the string is supposed to be a JSONPath so 
+// the case of `@.` shall be specially handled.
 func splitJsonPath(path string) []string {
 	tempPath := strings.Replace(path, "@.", "@:", -1)
 
@@ -27,6 +29,7 @@ func splitJsonPath(path string) []string {
 	return tokens
 }
 
+// parse translates a provided JSONPath to an array of node data accessors that can be used to retrieve values from or update a given map. 
 func parse(path string) ([]NodeDataAccessor, error) {
 	if !strings.HasPrefix(path, "$.") {
 		return nil, JsonPathError("JsonPath should start with '$.'")
@@ -51,6 +54,7 @@ func parse(path string) ([]NodeDataAccessor, error) {
 	return nodes, nil
 }
 
+// Get retrieves a value out of the given map as it is described in the provided JSONPath. 
 func Get(data any, path string) (any, error) {
 	nodes, err := parse(path)
 	if err != nil {
@@ -62,6 +66,7 @@ func Get(data any, path string) (any, error) {
 	return data, nil
 }
 
+// Put updates a given map as it is described in the provided JSONPath.
 func Put(data any, path string, value any) error {
 	nodes, err := parse(path)
 	if err != nil {

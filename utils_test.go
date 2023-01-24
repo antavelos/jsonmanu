@@ -82,7 +82,7 @@ func TestMapGetDeepFlattened(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(fmt.Sprintf("mapGetDeep(%v, %v)=%v", tc.m, tc.key, tc.expectedValues), func(t *testing.T) {
 			values := mapGetDeepFlattened(tc.m, tc.key)
-			if !compareArrayX(arrayxFromArray(tc.expectedValues), arrayxFromArray(values)) {
+			if !compareCounters(counterFromArray(tc.expectedValues), counterFromArray(values)) {
 				t.Errorf("Expected '%#v', but got '%#v'", tc.expectedValues, values)
 			}
 		})

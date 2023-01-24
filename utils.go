@@ -17,6 +17,8 @@ func isMapOrSlice(t any) bool {
 	return isMap(t) || isSlice(t)
 }
 
+// flattenArray flattens any array of arrays.
+// Example: flattenArray([1, 2, 3, [4, 5, [6, 7, [8, 9]]]]) = [1, 2, 3, 4, 5, 6, 7, 8, 9].
 func flattenArray(arr []any) (result []any) {
 	for _, item := range arr {
 		if !isSlice(item) {
@@ -34,6 +36,8 @@ func flattenArray(arr []any) (result []any) {
 	return
 }
 
+// mapGetDeep returns an array of the values of all the nodes withkey `key`.
+// m can be either a map of a slice.
 func mapGetDeep(m any, key string) (result []any) {
 	if isMap(m) {
 		v, ok := m.(map[string]any)[key]
@@ -63,6 +67,8 @@ func mapGetDeep(m any, key string) (result []any) {
 	return
 }
 
+// mapPutDeep updates the values of all the nodes withey `key`.
+// m can be either a map of a slice.
 func mapPutDeep(m any, key string, value any) error {
 	if isMap(m) {
 		if _, ok := m.(map[string]any)[key]; ok {
@@ -86,14 +92,17 @@ func mapPutDeep(m any, key string, value any) error {
 	return nil
 }
 
+// mapGetDeepFlattened returns the same as `getDeepFlattened` but the result will be a flattened array.
 func mapGetDeepFlattened(m any, key string) []any {
 	return flattenArray(mapGetDeep(m, key))
 }
 
-type ArrayX map[any]int
+// Holds the numbder of occurences of a item in an array.
+type counter map[any]int
 
-func arrayxFromArray(arr []any) ArrayX {
-	result := make(ArrayX)
+// counterFromArray returns a counter object of the elements of a given array.
+func counterFromArray(arr []any) counter {
+	result := make(counter)
 	for _, item := range arr {
 		itemx, ok := result[item]
 		if !ok {
@@ -106,19 +115,21 @@ func arrayxFromArray(arr []any) ArrayX {
 	return result
 }
 
-func compareArrayX(arrx1 ArrayX, arrx2 ArrayX) bool {
-	if len(arrx1) != len(arrx2) {
+// compareCounters compares two counter objects.
+func compareCounters(c1, c2 counter) bool {
+	if len(c1) != len(c2) {
 		return false
 	}
 
-	for k, v := range arrx1 {
-		if arrx2[k] != v {
+	for k, v := range c1 {
+		if c2[k] != v {
 			return false
 		}
 	}
 	return true
 }
 
+// sendOrQuit coordinated the value generation of a go routine that generates values.
 func sendOrQuit[T any](t T, out chan<- T, quit <-chan struct{}) bool {
 	select {
 	case out <- t:
@@ -128,6 +139,7 @@ func sendOrQuit[T any](t T, out chan<- T, quit <-chan struct{}) bool {
 	}
 }
 
+// iterMapKeys generates the keys of a given map
 func iterMapKeys(m any, quit <-chan struct{}) <-chan string {
 	out := make(chan string)
 	go func() {
@@ -144,6 +156,7 @@ func iterMapKeys(m any, quit <-chan struct{}) <-chan string {
 	return out
 }
 
+// mapHasKey determines whether a given key exists in a given map
 func mapHasKey(m any, key string) bool {
 	for mkey := range iterMapKeys(m, nil) {
 		if mkey == key {

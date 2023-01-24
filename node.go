@@ -8,28 +8,45 @@ import (
 	"strings"
 )
 
-// full array i.e. books[*]
+// Full array JSONPath pattern.
+// Example: `books[*]`
 const ARRAY_TOKEN_PATTERN = `^(?P<node>\w+)\[\*\]$`
 
-// indexed arrays i.e. books[1,2] books[2]
+// Indexed array JSONPath pattern.
+// Examples:
+// - `books[2]`
+// - `books[1,2]`
 const INDEXED_ARRAY_TOKEN_PATTERN = `^(?P<node>\w+)\[(?P<indices>( *\d+,? *)+)\]$`
 
-// sliced array i.e. books[:2], books[3:], books[1:2]
+// Sliced array JSONPath pattern.
+// Examples:
+// - `books[:2]`
+// - `books[3:]`
+// - `books[1:2]`
 const SLICED_ARRAY_TOKEN_PATTERN = `^(?P<node>\w+)\[(?P<start>\-?\d*):(?P<end>\-?\d*)\]$`
 
-// filtered array i.e. books[?(@.isbn)], books[?(@.price<10)]
+// Filtered array JSONPath pattern.
+// Examples:
+// - `books[?(@.isbn)]`
+// - `books[?(@.price<10)]`
 const FILTERED_ARRAY_TOKEN_PATTERN = `^(?P<node>\w+)\[\?\(@\.(?P<key>\w+)((?P<op>(\<|\>|!|=|(<=)|(>=))?)(?P<value>[\w\d]*))?\)\]$`
 
-// empty or alphanumeric named nodes (object nodes)
+// Simple JSON node pattern.
 const SIMPLE_NODE_TOKEN_PATTERN = `^(?P<node>(\w*|\*))$`
 
+// Interface to be implemented by all Node like structs for name retrieval.
 type NamedNode interface {
 	GetName() string
 }
 
+// Interface to be implemented by all Node like structs for retrieving and updating JSON node data.
 type NodeDataAccessor interface {
 	NamedNode
+
+	// Retrieves a value out of a given map according to the rules of the node called.
 	Get(any) any
+
+	// Updates a given map according to the rules of the node called.
 	Put(any, any) error
 }
 
@@ -39,33 +56,54 @@ func (err NodePutError) Error() string {
 	return fmt.Sprintf("NodePutError error: %s", string(err))
 }
 
+// Represents a simple JSON object node or leaf.
 type Node struct {
 	Name string
 }
 
+// Parent object for array like JSON nodes.
 type ArrayNode struct {
 	Node
 }
 
+// Represents an indexed array node i.e. `books[2]`.
 type ArrayIndexedNode struct {
 	ArrayNode
+
+	// Holds the indices
 	Indices []int
 }
 
+// Represents an sliced array node i.e. `books[2:4]`.
 type ArraySlicedNode struct {
 	ArrayNode
+
+	// The start index
 	Start int
-	End   int
+
+	// The end index
+	End int
 }
 
+// Represents a filtered array node i.e. `books[?(@.isbn)]`.
 type ArrayFilteredNode struct {
 	ArrayNode
-	Key   string
-	Op    string
+
+	// The property to filter with.
+	Key string
+
+	// The comparison oparator. Can be one of '=', '!', '<', '=<', '=>', '>'.
+	Op string
+
+	// The value to compare with.
 	Value any
 }
 
-// To be used to validate the provided unstructured map data in Get and Put methods
+// ----
+// Node
+// ----
+
+// validateSourceData ensures that the provided data can be used by the node for retrieval or update.
 func (node Node) validateSourceData(sourceData any) (any, error) {
 	if !isMap(sourceData) {
 		return nil, NodePutError(fmt.Sprintf("Source data is not a map: %#v", sourceData))
@@ -79,15 +117,17 @@ func (node Node) validateSourceData(sourceData any) (any, error) {
 	return data, nil
 }
 
+// Get returns the value of the provided map data with key same as the name of the node.
 func (node Node) Get(sourceData any) any {
-	data, err := node.validateSourceData(sourceData)
+	_, err := node.validateSourceData(sourceData)
 	if err != nil {
 		return nil
 	}
 
-	return data
+	return sourceData.(map[string]any)[node.Name]
 }
 
+// Put updates the value of the provided map data with key same as the name of the node.
 func (node Node) Put(sourceData any, value any) error {
 	if _, err := node.validateSourceData(sourceData); err != nil {
 		return err
@@ -98,8 +138,14 @@ func (node Node) Put(sourceData any, value any) error {
 	return nil
 }
 
+// GetName returns the name of the node.
 func (node Node) GetName() string { return node.Name }
 
+// ---------
+// ArrayNode
+// ---------
+
+// validateSourceData ensures that the provided data can be used by the array node for retrieval or update
 func (node ArrayNode) validateSourceData(sourceData any) (any, error) {
 	data, err := node.Node.validateSourceData(sourceData)
 	if err != nil {
@@ -113,6 +159,13 @@ func (node ArrayNode) validateSourceData(sourceData any) (any, error) {
 	return data, nil
 }
 
+// ----------------
+// ArrayIndexedNode
+// ----------------
+
+// Get returns the value of the provided map data with key same as the name of the node.
+// The underlying value must be a slice and the returned value will be the slice
+// containing only the values of the `sourceData` defined by the indices of the node.
 func (node ArrayIndexedNode) Get(sourceData any) any {
 	data, err := node.validateSourceData(sourceData)
 	if err != nil {
@@ -134,6 +187,9 @@ func (node ArrayIndexedNode) Get(sourceData any) any {
 	return result
 }
 
+// Put updates the value of the provided map data with key same as the name of the node.
+// The underlying value must be a slice and the new value will apply on the slice
+// defined by the indices of the node.
 func (node ArrayIndexedNode) Put(sourceData any, value any) error {
 	data, err := node.validateSourceData(sourceData)
 	if err != nil {
@@ -150,8 +206,16 @@ func (node ArrayIndexedNode) Put(sourceData any, value any) error {
 	return nil
 }
 
+// GetName returns the name of the node.
 func (node ArrayIndexedNode) GetName() string { return node.Node.Name }
 
+// ----------------
+// ArraySlicedNode
+// ----------------
+
+// Get returns the value of the provided map data with key same as the name of the node.
+// The underlying value must be a slice and the returned value will be the subslice
+// defined by the Start and End values of the node.
 func (node ArraySlicedNode) Get(sourceData any) any {
 	data, err := node.validateSourceData(sourceData)
 	if err != nil {
@@ -173,6 +237,9 @@ func (node ArraySlicedNode) Get(sourceData any) any {
 	return sourceData
 }
 
+// Put updates the value of the provided map data with key same as the name of the node.
+// The underlying value must be a slice and the new value will apply on the slice
+// defined by the indices of the node.
 func (node ArraySlicedNode) Put(sourceData any, value any) error {
 	data, err := node.validateSourceData(sourceData)
 	if err != nil {
@@ -196,7 +263,12 @@ func (node ArraySlicedNode) Put(sourceData any, value any) error {
 	return nil
 }
 
+// GetName returns the name of the node.
 func (node ArraySlicedNode) GetName() string { return node.Node.Name }
+
+// -----------------
+// ArrayFilteredNode
+// -----------------
 
 func toFloat64(value any) (float64, error) {
 	switch v := value.(type) {
@@ -231,6 +303,7 @@ func toFloat64(value any) (float64, error) {
 	return 0, errors.New("Can't convert to float64")
 }
 
+// isString returns whether the valus is of type string or not
 func isString(value any) bool {
 	switch value.(type) {
 	case string:
@@ -238,6 +311,10 @@ func isString(value any) bool {
 	}
 	return false
 }
+
+// assertCondition asserts the condition defined by the values and the operator.
+// The operator can be one of `=`, `!“, `<`, `>`, `<=`, `>=`
+// First a comparison will be attempted between floats (if applicable) and then between strings (if applicable)
 func assertCondition(val1 any, val2 any, op string) bool {
 	fval1, err1 := toFloat64(val1)
 	fval2, err2 := toFloat64(val2)
@@ -291,6 +368,9 @@ func assertCondition(val1 any, val2 any, op string) bool {
 	return false
 }
 
+// Get returns the value of the provided map data with key same as the name of the node.
+// The underlying value must be a slice and the returned value will be the subslice
+// that satisfies the condition defived by the key, value and operator of the node.
 func (node ArrayFilteredNode) Get(sourceData any) any {
 	data, err := node.validateSourceData(sourceData)
 	if err != nil {
@@ -312,6 +392,9 @@ func (node ArrayFilteredNode) Get(sourceData any) any {
 	return filtered
 }
 
+// Put updates the value of the provided map data with key same as the name of the node.
+// The underlying value must be a slice and the returned value will be the subslice
+// that satisfies the condition defived by the key, value and operator of the node.
 func (node ArrayFilteredNode) Put(sourceData any, value any) error {
 	data, err := node.validateSourceData(sourceData)
 	if err != nil {
@@ -332,10 +415,16 @@ func (node ArrayFilteredNode) Put(sourceData any, value any) error {
 	return nil
 }
 
+// GetName returns the name of the node.
 func (node ArrayFilteredNode) GetName() string { return node.Node.Name }
+
+// ----------
+// node utils
+// ----------
 
 type MatchDictionary map[string]string
 
+// getMatchDictionary returns a map of placeholders and their values found in a string given a pattern with placeholders in it.
 func getMatchDictionary(patt string, s string) (dict MatchDictionary) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -366,6 +455,7 @@ func getMatchDictionary(patt string, s string) (dict MatchDictionary) {
 	return
 }
 
+// nodeFromToken checks one by one the existing token patterns and returns an appropriate node data accessor.
 func nodeFromToken(token string) NodeDataAccessor {
 	var dict map[string]string
 
@@ -437,6 +527,7 @@ func nodeFromToken(token string) NodeDataAccessor {
 	return nil
 }
 
+// isArrayNode returns whether the node is of array type or not.
 func isArrayNode(node NodeDataAccessor) bool {
 	switch node.(type) {
 	case ArrayIndexedNode, ArraySlicedNode, ArrayFilteredNode:
@@ -445,6 +536,8 @@ func isArrayNode(node NodeDataAccessor) bool {
 	return false
 }
 
+// walkNodes iterates through a slice of nodes and at the same time descends in the given `data` map object replacing it with the new value.
+// The value held in data at the end of the itaration will be returned.
 func walkNodes(data any, nodes []NodeDataAccessor) any {
 	withReccursiveDescent := false
 	for _, node := range nodes {
