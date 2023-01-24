@@ -156,8 +156,8 @@ func iterMapKeys(m any, quit <-chan struct{}) <-chan string {
 	return out
 }
 
-// mapHasKey determines whether a given key exists in a given map
-func mapHasKey(m any, key string) bool {
+// mapHaskey determines whether a given key exists in a given map
+func mapHaskey(m any, key string) bool {
 	for mkey := range iterMapKeys(m, nil) {
 		if mkey == key {
 			return true

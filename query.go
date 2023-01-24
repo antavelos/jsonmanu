@@ -13,7 +13,7 @@ func (jpe JsonPathError) Error() string {
 
 type JsonData map[string]any
 
-// splitJsonPath splits a string based on a `.` separator. However, the string is supposed to be a JSONPath so 
+// splitJsonPath splits a string based on a `.` separator. However, the string is supposed to be a JSONPath so
 // the case of `@.` shall be specially handled.
 func splitJsonPath(path string) []string {
 	tempPath := strings.Replace(path, "@.", "@:", -1)
@@ -29,8 +29,8 @@ func splitJsonPath(path string) []string {
 	return tokens
 }
 
-// parse translates a provided JSONPath to an array of node data accessors that can be used to retrieve values from or update a given map. 
-func parse(path string) ([]NodeDataAccessor, error) {
+// parse translates a provided JSONPath to an array of node data accessors that can be used to retrieve values from or update a given map.
+func parse(path string) ([]nodeDataAccessor, error) {
 	if !strings.HasPrefix(path, "$.") {
 		return nil, JsonPathError("JsonPath should start with '$.'")
 	}
@@ -41,7 +41,7 @@ func parse(path string) ([]NodeDataAccessor, error) {
 
 	tokens := splitJsonPath(path)
 
-	var nodes []NodeDataAccessor
+	var nodes []nodeDataAccessor
 	for i, token := range tokens[1:] {
 		node := nodeFromToken(token)
 		if node == nil {
@@ -54,7 +54,7 @@ func parse(path string) ([]NodeDataAccessor, error) {
 	return nodes, nil
 }
 
-// Get retrieves a value out of the given map as it is described in the provided JSONPath. 
+// Get retrieves a value out of the given map as it is described in the provided JSONPath.
 func Get(data any, path string) (any, error) {
 	nodes, err := parse(path)
 	if err != nil {
@@ -77,8 +77,8 @@ func Put(data any, path string, value any) error {
 
 	// handle reccursive descent in case the last node is a leaf node and its previous one
 	// is not known, i.e. "$..price"
-	if nodes[nodesCount-2].GetName() == "" && !isArrayNode(nodes[nodesCount-1]) {
-		return mapPutDeep(data, nodes[nodesCount-1].GetName(), value)
+	if nodes[nodesCount-2].getName() == "" && !isArrayNode(nodes[nodesCount-1]) {
+		return mapPutDeep(data, nodes[nodesCount-1].getName(), value)
 	}
 
 	allButLastNodes, lastNode := nodes[:nodesCount-1], nodes[nodesCount-1]
@@ -87,12 +87,12 @@ func Put(data any, path string, value any) error {
 
 	if isSlice(data) {
 		for _, item := range data.([]any) {
-			if err := lastNode.Put(item, value); err != nil {
+			if err := lastNode.put(item, value); err != nil {
 				return err
 			}
 		}
 		return nil
 	}
 
-	return lastNode.Put(data, value)
+	return lastNode.put(data, value)
 }

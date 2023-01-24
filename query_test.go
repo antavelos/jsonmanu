@@ -54,7 +54,7 @@ func TestSplitJsonPath(t *testing.T) {
 
 type JsonmanParseTestCase struct {
 	path          string
-	expectedNodes []NodeDataAccessor
+	expectedNodes []nodeDataAccessor
 	expectedError error
 }
 
@@ -72,142 +72,142 @@ func TestParse(t *testing.T) {
 		},
 		{
 			path: "$.books[0]",
-			expectedNodes: []NodeDataAccessor{
-				ArrayIndexedNode{
-					ArrayNode: ArrayNode{Node: Node{Name: "books"}},
-					Indices:   []int{0},
+			expectedNodes: []nodeDataAccessor{
+				arrayIndexedNode{
+					arrayNode: arrayNode{node: node{name: "books"}},
+					indices:   []int{0},
 				},
 			},
 			expectedError: nil,
 		},
 		{
 			path: "$.library.books[*]",
-			expectedNodes: []NodeDataAccessor{
-				Node{
-					Name: "library",
+			expectedNodes: []nodeDataAccessor{
+				node{
+					name: "library",
 				},
-				ArrayIndexedNode{
-					ArrayNode: ArrayNode{Node: Node{Name: "books"}},
+				arrayIndexedNode{
+					arrayNode: arrayNode{node: node{name: "books"}},
 				},
 			},
 			expectedError: nil,
 		},
 		{
 			path: "$.library.books[0]",
-			expectedNodes: []NodeDataAccessor{
-				Node{
-					Name: "library",
+			expectedNodes: []nodeDataAccessor{
+				node{
+					name: "library",
 				},
-				ArrayIndexedNode{
-					ArrayNode: ArrayNode{Node: Node{Name: "books"}},
-					Indices:   []int{0},
+				arrayIndexedNode{
+					arrayNode: arrayNode{node: node{name: "books"}},
+					indices:   []int{0},
 				},
 			},
 			expectedError: nil,
 		},
 		{
 			path: "$.library.books[0,1,2]",
-			expectedNodes: []NodeDataAccessor{
-				Node{
-					Name: "library",
+			expectedNodes: []nodeDataAccessor{
+				node{
+					name: "library",
 				},
-				ArrayIndexedNode{
-					ArrayNode: ArrayNode{Node: Node{Name: "books"}},
-					Indices:   []int{0, 1, 2},
+				arrayIndexedNode{
+					arrayNode: arrayNode{node: node{name: "books"}},
+					indices:   []int{0, 1, 2},
 				},
 			},
 			expectedError: nil,
 		},
 		{
 			path: "$.library.books[1:]",
-			expectedNodes: []NodeDataAccessor{
-				Node{
-					Name: "library",
+			expectedNodes: []nodeDataAccessor{
+				node{
+					name: "library",
 				},
-				ArraySlicedNode{
-					ArrayNode: ArrayNode{Node: Node{Name: "books"}},
-					Start:     1,
+				arraySlicedNode{
+					arrayNode: arrayNode{node: node{name: "books"}},
+					start:     1,
 				},
 			},
 			expectedError: nil,
 		},
 		{
 			path: "$.library.books[1:2]",
-			expectedNodes: []NodeDataAccessor{
-				Node{
-					Name: "library",
+			expectedNodes: []nodeDataAccessor{
+				node{
+					name: "library",
 				},
-				ArraySlicedNode{
-					ArrayNode: ArrayNode{Node: Node{Name: "books"}},
-					Start:     1,
-					End:       2,
+				arraySlicedNode{
+					arrayNode: arrayNode{node: node{name: "books"}},
+					start:     1,
+					end:       2,
 				},
 			},
 			expectedError: nil,
 		},
 		{
 			path: "$.library.books[:2]",
-			expectedNodes: []NodeDataAccessor{
-				Node{
-					Name: "library",
+			expectedNodes: []nodeDataAccessor{
+				node{
+					name: "library",
 				},
-				ArraySlicedNode{
-					ArrayNode: ArrayNode{Node: Node{Name: "books"}},
-					End:       2,
+				arraySlicedNode{
+					arrayNode: arrayNode{node: node{name: "books"}},
+					end:       2,
 				},
 			},
 			expectedError: nil,
 		},
 		{
 			path: "$.library.books[?(@.price<10)]",
-			expectedNodes: []NodeDataAccessor{
-				Node{
-					Name: "library",
+			expectedNodes: []nodeDataAccessor{
+				node{
+					name: "library",
 				},
-				ArrayFilteredNode{
-					ArrayNode: ArrayNode{Node: Node{Name: "books"}},
-					Key:       "price",
-					Op:        "<",
-					Value:     "10",
+				arrayFilteredNode{
+					arrayNode: arrayNode{node: node{name: "books"}},
+					key:       "price",
+					op:        "<",
+					value:     "10",
 				},
 			},
 			expectedError: nil,
 		},
 		{
 			path: "$.library.books[?(@.isbn)]",
-			expectedNodes: []NodeDataAccessor{
-				Node{
-					Name: "library",
+			expectedNodes: []nodeDataAccessor{
+				node{
+					name: "library",
 				},
-				ArrayFilteredNode{
-					ArrayNode: ArrayNode{Node: Node{Name: "books"}},
-					Key:       "isbn",
-					Op:        "",
-					Value:     "",
+				arrayFilteredNode{
+					arrayNode: arrayNode{node: node{name: "books"}},
+					key:       "isbn",
+					op:        "",
+					value:     "",
 				},
 			},
 			expectedError: nil,
 		},
 		{
 			path: "$..books",
-			expectedNodes: []NodeDataAccessor{
-				Node{
-					Name: "",
+			expectedNodes: []nodeDataAccessor{
+				node{
+					name: "",
 				},
-				Node{
-					Name: "books",
+				node{
+					name: "books",
 				},
 			},
 			expectedError: nil,
 		},
 		{
 			path: "$..*",
-			expectedNodes: []NodeDataAccessor{
-				Node{
-					Name: "",
+			expectedNodes: []nodeDataAccessor{
+				node{
+					name: "",
 				},
-				Node{
-					Name: "*",
+				node{
+					name: "*",
 				},
 			},
 			expectedError: nil,
@@ -217,7 +217,7 @@ func TestParse(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("jsonmanu.parse(%v)=%v, %v", tc.path, tc.expectedNodes, tc.expectedError), func(t *testing.T) {
 			nodes, err := parse(tc.path)
-			if !cmp.Equal(tc.expectedNodes, nodes) {
+			if !cmp.Equal(tc.expectedNodes, nodes, cmp.AllowUnexported(node{}, arrayNode{}, arrayIndexedNode{}, arrayFilteredNode{}, arraySlicedNode{})) {
 				t.Errorf("Expected nodes '%#v', but got '%#v'", tc.expectedNodes, nodes)
 			}
 			if !cmp.Equal(tc.expectedError, err) {
