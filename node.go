@@ -50,10 +50,10 @@ type NodeDataAccessor interface {
 	Put(any, any) error
 }
 
-type NodePutError string
+type DataValidationError string
 
-func (err NodePutError) Error() string {
-	return fmt.Sprintf("NodePutError error: %s", string(err))
+func (err DataValidationError) Error() string {
+	return fmt.Sprintf("DataValidationError error: %s", string(err))
 }
 
 // Represents a simple JSON object node or leaf.
@@ -106,12 +106,12 @@ type ArrayFilteredNode struct {
 // validateSourceData ensures that the provided data can be used by the node for retrieval or update.
 func (node Node) validateSourceData(sourceData any) (any, error) {
 	if !isMap(sourceData) {
-		return nil, NodePutError(fmt.Sprintf("Source data is not a map: %#v", sourceData))
+		return nil, DataValidationError(fmt.Sprintf("Source data is not a map: %#v", sourceData))
 	}
 
 	data, ok := sourceData.(map[string]any)[node.Name]
 	if !ok {
-		return nil, NodePutError(fmt.Sprintf("Key '%v' not found", node.Name))
+		return nil, DataValidationError(fmt.Sprintf("Key '%v' not found", node.Name))
 	}
 
 	return data, nil
@@ -153,7 +153,7 @@ func (node ArrayNode) validateSourceData(sourceData any) (any, error) {
 	}
 
 	if !isSlice(data) {
-		return nil, NodePutError(fmt.Sprintf("Value of key '%v' is not an array: %#v", node.Node.Name, sourceData))
+		return nil, DataValidationError(fmt.Sprintf("Value of key '%v' is not an array: %#v", node.Node.Name, sourceData))
 	}
 
 	return data, nil

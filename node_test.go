@@ -158,21 +158,21 @@ func TestNodePut(t *testing.T) {
 			manager:             Node{"numbers"},
 			sourceData:          []any{1, 2, 3},
 			value:               []any{2.3, 4.5, 6.7},
-			expectedError:       NodePutError(fmt.Sprintf("Source data is not a map: %#v", []any{1, 2, 3})),
+			expectedError:       DataValidationError(fmt.Sprintf("Source data is not a map: %#v", []any{1, 2, 3})),
 			expectedUpdatedData: []any{1, 2, 3},
 		},
 		{
 			manager:             Node{"numbers"},
 			sourceData:          []any{1, 2, 3},
 			value:               100,
-			expectedError:       NodePutError(fmt.Sprintf("Source data is not a map: %#v", []any{1, 2, 3})),
+			expectedError:       DataValidationError(fmt.Sprintf("Source data is not a map: %#v", []any{1, 2, 3})),
 			expectedUpdatedData: []any{1, 2, 3},
 		},
 		{
 			manager:             Node{"numbers"},
 			sourceData:          map[string]any{"book": []any{1, 2, 3}},
 			value:               100,
-			expectedError:       NodePutError(fmt.Sprintf("Key 'numbers' not found")),
+			expectedError:       DataValidationError(fmt.Sprintf("Key 'numbers' not found")),
 			expectedUpdatedData: map[string]any{"book": []any{1, 2, 3}},
 		},
 	}
@@ -273,7 +273,7 @@ func TestArrayIndexedNodePut(t *testing.T) {
 			},
 			sourceData:          []any{1, 2, 3},
 			value:               100,
-			expectedError:       NodePutError(fmt.Sprintf("Source data is not a map: %#v", []any{1, 2, 3})),
+			expectedError:       DataValidationError(fmt.Sprintf("Source data is not a map: %#v", []any{1, 2, 3})),
 			expectedUpdatedData: []any{1, 2, 3},
 		},
 		{
@@ -283,7 +283,7 @@ func TestArrayIndexedNodePut(t *testing.T) {
 			},
 			sourceData:          map[string]any{"book": []any{1, 2, 3}},
 			value:               100,
-			expectedError:       NodePutError(fmt.Sprintf("Key 'books' not found")),
+			expectedError:       DataValidationError(fmt.Sprintf("Key 'books' not found")),
 			expectedUpdatedData: map[string]any{"book": []any{1, 2, 3}},
 		},
 		{
@@ -293,7 +293,7 @@ func TestArrayIndexedNodePut(t *testing.T) {
 			},
 			sourceData:          map[string]any{"books": 1},
 			value:               100,
-			expectedError:       NodePutError(fmt.Sprintf("Value of key 'books' is not an array: %#v", map[string]any{"books": 1})),
+			expectedError:       DataValidationError(fmt.Sprintf("Value of key 'books' is not an array: %#v", map[string]any{"books": 1})),
 			expectedUpdatedData: map[string]any{"books": 1},
 		},
 	}
@@ -434,7 +434,7 @@ func TestArraySlicedNodePut(t *testing.T) {
 			},
 			sourceData:          []any{1, 2, 3},
 			value:               100,
-			expectedError:       NodePutError(fmt.Sprintf("Source data is not a map: %#v", []any{1, 2, 3})),
+			expectedError:       DataValidationError(fmt.Sprintf("Source data is not a map: %#v", []any{1, 2, 3})),
 			expectedUpdatedData: []any{1, 2, 3},
 		},
 		{
@@ -445,7 +445,7 @@ func TestArraySlicedNodePut(t *testing.T) {
 			},
 			sourceData:          map[string]any{"book": []any{1, 2, 3}},
 			value:               100,
-			expectedError:       NodePutError(fmt.Sprintf("Key 'books' not found")),
+			expectedError:       DataValidationError(fmt.Sprintf("Key 'books' not found")),
 			expectedUpdatedData: map[string]any{"book": []any{1, 2, 3}},
 		},
 		{
@@ -456,7 +456,7 @@ func TestArraySlicedNodePut(t *testing.T) {
 			},
 			sourceData:          map[string]any{"books": 1},
 			value:               100,
-			expectedError:       NodePutError(fmt.Sprintf("Value of key 'books' is not an array: %#v", map[string]any{"books": 1})),
+			expectedError:       DataValidationError(fmt.Sprintf("Value of key 'books' is not an array: %#v", map[string]any{"books": 1})),
 			expectedUpdatedData: map[string]any{"books": 1},
 		},
 	}
