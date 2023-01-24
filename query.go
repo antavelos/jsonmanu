@@ -30,20 +30,20 @@ func splitJsonPath(path string) []string {
 // parse translates a provided JSONPath to an array of node data accessors that can be used to retrieve values from or update a given map.
 func parse(path string) ([]nodeDataAccessor, error) {
 	if !strings.HasPrefix(path, "$.") {
-		return nil, JsonPathError("JsonPath should start with '$.'")
+		return nil, JsonPathError("JSONPath should start with '$.'")
 	}
 
 	if strings.HasSuffix(path, ".") {
-		return nil, JsonPathError("JsonPath should not end with '.'")
+		return nil, JsonPathError("JSONPath should not end with '.'")
 	}
 
-	tokens := splitJsonPath(path)
+	jsonPathSubNodes := splitJsonPath(path)
 
 	var nodes []nodeDataAccessor
-	for i, token := range tokens[1:] {
-		node := nodeFromToken(token)
+	for i, jsonPathSubNode := range jsonPathSubNodes[1:] {
+		node := nodeFromJsonPathSubNode(jsonPathSubNode)
 		if node == nil {
-			return nil, JsonPathError(fmt.Sprintf("Couldn't parse token %v: '%v'", i, token))
+			return nil, JsonPathError(fmt.Sprintf("Couldn't parse JSONPath substring %v: '%v'", i, jsonPathSubNode))
 		}
 
 		nodes = append(nodes, node)

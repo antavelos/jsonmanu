@@ -30,8 +30,8 @@ func TestSplitJsonPath(t *testing.T) {
 			expectedTokens: []string{"$", "library", "books[2:4]"},
 		},
 		{
-			path:           "$.library.books[?(@.price<10)]",
-			expectedTokens: []string{"$", "library", "books[?(@.price<10)]"},
+			path:           "$.library.books[?(@.price < 10)]",
+			expectedTokens: []string{"$", "library", "books[?(@.price < 10)]"},
 		},
 		{
 			path:           "$..books",
@@ -63,12 +63,17 @@ func TestParse(t *testing.T) {
 		{
 			path:          "books",
 			expectedNodes: nil,
-			expectedError: JsonPathError("JsonPath should start with '$.'"),
+			expectedError: JsonPathError("JSONPath should start with '$.'"),
 		},
 		{
 			path:          "$.books.",
 			expectedNodes: nil,
-			expectedError: JsonPathError("JsonPath should not end with '.'"),
+			expectedError: JsonPathError("JSONPath should not end with '.'"),
+		},
+		{
+			path:          "$.books. ",
+			expectedNodes: nil,
+			expectedError: JsonPathError("Couldn't parse JSONPath substring 1: ' '"),
 		},
 		{
 			path: "$.books[0]",
@@ -159,7 +164,7 @@ func TestParse(t *testing.T) {
 			expectedError: nil,
 		},
 		{
-			path: "$.library.books[?(@.price<10)]",
+			path: "$.library.books[?(@.price < 10)]",
 			expectedNodes: []nodeDataAccessor{
 				node{
 					name: "library",
@@ -245,7 +250,7 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book3"},
 				},
 			},
-			expectedError: JsonPathError("JsonPath should start with '$.'"),
+			expectedError: JsonPathError("JSONPath should start with '$.'"),
 			expectedData:  nil,
 		},
 		{
@@ -257,7 +262,7 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book3"},
 				},
 			},
-			expectedError: JsonPathError("JsonPath should not end with '.'"),
+			expectedError: JsonPathError("JSONPath should not end with '.'"),
 			expectedData:  nil,
 		},
 		{
@@ -454,7 +459,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books[?(@.price>10)]",
+			path: "$.books[?(@.price > 10)]",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1", "price": 15},
@@ -470,7 +475,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books[?(@.price>=10)]",
+			path: "$.books[?(@.price >= 10)]",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1", "price": 15},
@@ -487,7 +492,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books[?(@.price<10)]",
+			path: "$.books[?(@.price < 10)]",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1", "price": 15},
@@ -502,7 +507,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books[?(@.price<=10)]",
+			path: "$.books[?(@.price <= 10)]",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1", "price": 15},
@@ -518,7 +523,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books[?(@.price=10)]",
+			path: "$.books[?(@.price == 10)]",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1", "price": 15},
@@ -533,7 +538,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books[?(@.price>10)].author",
+			path: "$.books[?(@.price > 10)].author",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1", "price": 15},
@@ -546,7 +551,7 @@ func TestGet(t *testing.T) {
 			expectedData:  []any{"Nietzsche", "Nietzsche"},
 		},
 		{
-			path: "$.books[?(@.author=Nietzsche)]",
+			path: "$.books[?(@.author == Nietzsche)]",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1", "price": 15},
@@ -728,7 +733,7 @@ func TestPut(t *testing.T) {
 				},
 			},
 			value:         1,
-			expectedError: JsonPathError("JsonPath should start with '$.'"),
+			expectedError: JsonPathError("JSONPath should start with '$.'"),
 			expectedUpdatedData: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
@@ -747,7 +752,7 @@ func TestPut(t *testing.T) {
 				},
 			},
 			value:         1,
-			expectedError: JsonPathError("JsonPath should not end with '.'"),
+			expectedError: JsonPathError("JSONPath should not end with '.'"),
 			expectedUpdatedData: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
@@ -880,7 +885,7 @@ func TestPut(t *testing.T) {
 			},
 		},
 		{
-			path: "$.store.books[?(@.author=Nietzsche)].price",
+			path: "$.store.books[?(@.author == Nietzsche)].price",
 			data: map[string]any{
 				"store": map[string]any{
 					"books": []any{
@@ -909,7 +914,7 @@ func TestPut(t *testing.T) {
 			},
 		},
 		{
-			path: "$..books[?(@.author=Nietzsche)].price",
+			path: "$..books[?(@.author == Nietzsche)].price",
 			data: map[string]any{
 				"store": map[string]any{
 					"books": []any{
@@ -938,7 +943,7 @@ func TestPut(t *testing.T) {
 			},
 		},
 		{
-			path: "$.store..books[?(@.author=Nietzsche)].price",
+			path: "$.store..books[?(@.author == Nietzsche)].price",
 			data: map[string]any{
 				"store": map[string]any{
 					"library": map[string]any{

@@ -100,7 +100,7 @@ func main() {
 	// ["Book2" "Book3" "Book4"] <nil>
 
 	// get the price of books authored by Nietzsche
-	fmt.Println(jm.Get(data, "$..books[?(@.author=Nietzsche)].price"))
+	fmt.Println(jm.Get(data, "$..books[?(@.author == Nietzsche)].price"))
 	// [15] <nil>
 }
 ```
@@ -189,7 +189,7 @@ func main() {
 	// map[author:Heraklitus price:10 title:Book6]]]]]
 
 	// update the price of books authored by Camus to 30
-	jm.Put(data, "$..books[?(@.author=Camus)].price", 30)
+	jm.Put(data, "$..books[?(@.author == Camus)].price", 30)
 	fmt.Println(data)
 	// map[store:map[library:map[books:[
 	// map[author:Nietzsche price:15 title:Book1] 

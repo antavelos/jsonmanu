@@ -10,29 +10,29 @@ import (
 
 // Full array JSONPath pattern.
 // Example: `books[*]`
-const ARRAY_TOKEN_PATTERN = `^(?P<node>\w+)\[\*\]$`
+const JSON_PATH_ARRAY_NODE_PATTERN = `^(?P<node>\w+)\[\*\]$`
 
 // Indexed array JSONPath pattern.
 // Examples:
 // - `books[2]`
 // - `books[1,2]`
-const INDEXED_ARRAY_TOKEN_PATTERN = `^(?P<node>\w+)\[(?P<indices>( *\d+,? *)+)\]$`
+const JSON_PATH_INDEXED_ARRAY_NODE_PATTERN = `^(?P<node>\w+)\[(?P<indices>( *\d+,? *)+)\]$`
 
 // Sliced array JSONPath pattern.
 // Examples:
 // - `books[:2]`
 // - `books[3:]`
 // - `books[1:2]`
-const SLICED_ARRAY_TOKEN_PATTERN = `^(?P<node>\w+)\[(?P<start>\-?\d*):(?P<end>\-?\d*)\]$`
+const JSON_PATH_SLICED_ARRAY_NODE_PATTERN = `^(?P<node>\w+)\[(?P<start>\-?\d*):(?P<end>\-?\d*)\]$`
 
 // Filtered array JSONPath pattern.
 // Examples:
 // - `books[?(@.isbn)]`
 // - `books[?(@.price<10)]`
-const FILTERED_ARRAY_TOKEN_PATTERN = `^(?P<node>\w+)\[\?\(@\.(?P<key>\w+)((?P<op>(\<|\>|!|=|(<=)|(>=))?)(?P<value>[\w\d]*))?\)\]$`
+const JSON_PATH_FILTERED_ARRAY_NODE_PATTERN = `^(?P<node>\w+)\[\?\(@\.(?P<key>\w+)\s*((?P<op>(\<|\>|(!=)|={2}|(<=)|(>=))?)\s*(?P<value>[\w\d]*))?\)\]$`
 
 // Simple JSON node pattern.
-const SIMPLE_NODE_TOKEN_PATTERN = `^(?P<node>(\w*|\*))$`
+const JSON_PATH_SIMPLE_NODE_PATTERN = `^(?P<node>(\w*|\*))$`
 
 // Interface to be implemented by all node like structs for name retrieval.
 type namedNode interface {
@@ -273,6 +273,7 @@ func (n arraySlicedNode) getName() string { return n.node.name }
 // arrayFilteredNode
 // -----------------
 
+// toFloat converts any number like value or any string number to float64.
 func toFloat64(value any) (float64, error) {
 	switch v := value.(type) {
 	case int:
@@ -352,14 +353,14 @@ func assertCondition(val1 any, val2 any, op string) bool {
 		if isString(val1) && isString(val2) {
 			return val1.(string) >= val2.(string)
 		}
-	case "=":
+	case "==":
 		if areFloats {
 			return fval1 == fval2
 		}
 		if isString(val1) && isString(val2) {
 			return val1.(string) == val2.(string)
 		}
-	case "!":
+	case "=!":
 		if areFloats {
 			return fval1 != fval2
 		}
@@ -460,11 +461,11 @@ func getMatchDictionary(patt string, s string) (dict MatchDictionary) {
 	return
 }
 
-// nodeFromToken checks one by one the existing token patterns and returns an appropriate node data accessor.
-func nodeFromToken(token string) nodeDataAccessor {
+// nodeFromJsonPathSubNode checks one by one the existing JSONPath patterns and returns an appropriate node data accessor.
+func nodeFromJsonPathSubNode(jsonPathSubNode string) nodeDataAccessor {
 	var dict map[string]string
 
-	dict = getMatchDictionary(ARRAY_TOKEN_PATTERN, token)
+	dict = getMatchDictionary(JSON_PATH_ARRAY_NODE_PATTERN, jsonPathSubNode)
 	if len(dict) > 0 {
 		return arrayIndexedNode{
 			arrayNode: arrayNode{
@@ -475,7 +476,7 @@ func nodeFromToken(token string) nodeDataAccessor {
 		}
 	}
 
-	dict = getMatchDictionary(INDEXED_ARRAY_TOKEN_PATTERN, token)
+	dict = getMatchDictionary(JSON_PATH_INDEXED_ARRAY_NODE_PATTERN, jsonPathSubNode)
 	if len(dict) > 0 {
 		node := arrayIndexedNode{
 			arrayNode: arrayNode{
@@ -493,7 +494,7 @@ func nodeFromToken(token string) nodeDataAccessor {
 		return node
 	}
 
-	dict = getMatchDictionary(SLICED_ARRAY_TOKEN_PATTERN, token)
+	dict = getMatchDictionary(JSON_PATH_SLICED_ARRAY_NODE_PATTERN, jsonPathSubNode)
 	if len(dict) > 0 {
 		node := arraySlicedNode{
 			arrayNode: arrayNode{
@@ -508,7 +509,7 @@ func nodeFromToken(token string) nodeDataAccessor {
 		return node
 	}
 
-	dict = getMatchDictionary(FILTERED_ARRAY_TOKEN_PATTERN, token)
+	dict = getMatchDictionary(JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, jsonPathSubNode)
 	if len(dict) > 0 {
 		return arrayFilteredNode{
 			arrayNode: arrayNode{
@@ -522,7 +523,7 @@ func nodeFromToken(token string) nodeDataAccessor {
 		}
 	}
 
-	dict = getMatchDictionary(SIMPLE_NODE_TOKEN_PATTERN, token)
+	dict = getMatchDictionary(JSON_PATH_SIMPLE_NODE_PATTERN, jsonPathSubNode)
 	if len(dict) > 0 {
 		return node{
 			name: dict["node"],

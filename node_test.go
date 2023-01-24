@@ -34,15 +34,20 @@ func TestGetMatchDictionary(t *testing.T) {
 		{`(?P<name>\w+)`, "-", MatchDictionary{}},
 		{`(?P<name>\w+)`, "alex", MatchDictionary{"name": "alex"}},
 		{`^(?P<name>\w+) (?P<age>\d+)$`, "alex 40", MatchDictionary{"name": "alex", "age": "40"}},
-		{SIMPLE_NODE_TOKEN_PATTERN, "books", MatchDictionary{"node": "books"}},
-		{SIMPLE_NODE_TOKEN_PATTERN, "", MatchDictionary{"node": ""}},
-		{ARRAY_TOKEN_PATTERN, "books[*]", MatchDictionary{"node": "books"}},
-		{INDEXED_ARRAY_TOKEN_PATTERN, "books[1,2]", MatchDictionary{"node": "books", "indices": "1,2"}},
-		{SLICED_ARRAY_TOKEN_PATTERN, "books[-1:]", MatchDictionary{"node": "books", "start": "-1", "end": ""}},
-		{SLICED_ARRAY_TOKEN_PATTERN, "books[3:7]", MatchDictionary{"node": "books", "start": "3", "end": "7"}},
-		{SLICED_ARRAY_TOKEN_PATTERN, "books[:7]", MatchDictionary{"node": "books", "start": "", "end": "7"}},
-		{FILTERED_ARRAY_TOKEN_PATTERN, "books[?(@.price)]", MatchDictionary{"node": "books", "key": "price", "op": "", "value": ""}},
-		{FILTERED_ARRAY_TOKEN_PATTERN, "books[?(@.price<10)]", MatchDictionary{"node": "books", "key": "price", "op": "<", "value": "10"}},
+		{JSON_PATH_SIMPLE_NODE_PATTERN, "books", MatchDictionary{"node": "books"}},
+		{JSON_PATH_SIMPLE_NODE_PATTERN, "", MatchDictionary{"node": ""}},
+		{JSON_PATH_ARRAY_NODE_PATTERN, "books[*]", MatchDictionary{"node": "books"}},
+		{JSON_PATH_INDEXED_ARRAY_NODE_PATTERN, "books[1,2]", MatchDictionary{"node": "books", "indices": "1,2"}},
+		{JSON_PATH_SLICED_ARRAY_NODE_PATTERN, "books[-1:]", MatchDictionary{"node": "books", "start": "-1", "end": ""}},
+		{JSON_PATH_SLICED_ARRAY_NODE_PATTERN, "books[3:7]", MatchDictionary{"node": "books", "start": "3", "end": "7"}},
+		{JSON_PATH_SLICED_ARRAY_NODE_PATTERN, "books[:7]", MatchDictionary{"node": "books", "start": "", "end": "7"}},
+		{JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, "books[?(@.price)]", MatchDictionary{"node": "books", "key": "price", "op": "", "value": ""}},
+		{JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, "books[?(@.price < 10)]", MatchDictionary{"node": "books", "key": "price", "op": "<", "value": "10"}},
+		{JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, "books[?(@.price > 10)]", MatchDictionary{"node": "books", "key": "price", "op": ">", "value": "10"}},
+		{JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, "books[?(@.price >= 10)]", MatchDictionary{"node": "books", "key": "price", "op": ">=", "value": "10"}},
+		{JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, "books[?(@.price <= 10)]", MatchDictionary{"node": "books", "key": "price", "op": "<=", "value": "10"}},
+		{JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, "books[?(@.price == 10)]", MatchDictionary{"node": "books", "key": "price", "op": "==", "value": "10"}},
+		{JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, "books[?(@.price != 10)]", MatchDictionary{"node": "books", "key": "price", "op": "!=", "value": "10"}},
 	}
 
 	for _, tc := range cases {
@@ -60,7 +65,7 @@ type NodeFromTokenTestCase struct {
 	expectedNode any
 }
 
-func TestNodeFromToken(t *testing.T) {
+func TestNnodeFromJsonPathSubNode(t *testing.T) {
 	cases := []NodeFromTokenTestCase{
 		{"*", node{name: "*"}},
 		{"books", node{name: "books"}},
@@ -70,18 +75,18 @@ func TestNodeFromToken(t *testing.T) {
 		{"books[-1:]", arraySlicedNode{arrayNode: arrayNode{node: node{name: "books"}}, start: -1}},
 		{"books[1:3]", arraySlicedNode{arrayNode: arrayNode{node: node{name: "books"}}, start: 1, end: 3}},
 		{"books[:3]", arraySlicedNode{arrayNode: arrayNode{node: node{name: "books"}}, end: 3}},
-		{"books[?(@.price<10)]", arrayFilteredNode{arrayNode: arrayNode{node: node{name: "books"}}, key: "price", op: "<", value: "10"}},
-		{"books[?(@.price<=10)]", arrayFilteredNode{arrayNode: arrayNode{node: node{name: "books"}}, key: "price", op: "<=", value: "10"}},
-		{"books[?(@.price>=10)]", arrayFilteredNode{arrayNode: arrayNode{node: node{name: "books"}}, key: "price", op: ">=", value: "10"}},
-		{"books[?(@.price>10)]", arrayFilteredNode{arrayNode: arrayNode{node: node{name: "books"}}, key: "price", op: ">", value: "10"}},
-		{"books[?(@.price=10)]", arrayFilteredNode{arrayNode: arrayNode{node: node{name: "books"}}, key: "price", op: "=", value: "10"}},
-		{"books[?(@.price!10)]", arrayFilteredNode{arrayNode: arrayNode{node: node{name: "books"}}, key: "price", op: "!", value: "10"}},
+		{"books[?(@.price < 10)]", arrayFilteredNode{arrayNode: arrayNode{node: node{name: "books"}}, key: "price", op: "<", value: "10"}},
+		{"books[?(@.price <= 10)]", arrayFilteredNode{arrayNode: arrayNode{node: node{name: "books"}}, key: "price", op: "<=", value: "10"}},
+		{"books[?(@.price >= 10)]", arrayFilteredNode{arrayNode: arrayNode{node: node{name: "books"}}, key: "price", op: ">=", value: "10"}},
+		{"books[?(@.price > 10)]", arrayFilteredNode{arrayNode: arrayNode{node: node{name: "books"}}, key: "price", op: ">", value: "10"}},
+		{"books[?(@.price == 10)]", arrayFilteredNode{arrayNode: arrayNode{node: node{name: "books"}}, key: "price", op: "==", value: "10"}},
+		{"books[?(@.price != 10)]", arrayFilteredNode{arrayNode: arrayNode{node: node{name: "books"}}, key: "price", op: "!=", value: "10"}},
 		{"books[?(@.price)]", arrayFilteredNode{arrayNode: arrayNode{node: node{name: "books"}}, key: "price", op: "", value: ""}},
 	}
 
 	for _, tc := range cases {
-		t.Run(fmt.Sprintf("nodeFromToken(%v)=%v", tc.str, tc.expectedNode), func(t *testing.T) {
-			n := nodeFromToken(tc.str)
+		t.Run(fmt.Sprintf("nodeFromJsonPathSubNode(%v)=%v", tc.str, tc.expectedNode), func(t *testing.T) {
+			n := nodeFromJsonPathSubNode(tc.str)
 			if !cmp.Equal(tc.expectedNode, n, cmp.AllowUnexported(node{}, arrayNode{}, arrayIndexedNode{}, arrayFilteredNode{}, arraySlicedNode{})) {
 				t.Errorf("Expected '%#v', but got '%#v'", tc.expectedNode, n)
 			}
@@ -548,7 +553,7 @@ func TestarrayFilteredNodeGet(t *testing.T) {
 			manager: arrayFilteredNode{
 				arrayNode: arrayNode{node: node{name: "books"}},
 				key:       "price",
-				op:        "=",
+				op:        "==",
 				value:     5,
 			},
 			sourceData: map[string]any{
@@ -567,7 +572,7 @@ func TestarrayFilteredNodeGet(t *testing.T) {
 			manager: arrayFilteredNode{
 				arrayNode: arrayNode{node: node{name: "books"}},
 				key:       "price",
-				op:        "!",
+				op:        "!=",
 				value:     5,
 			},
 			sourceData: map[string]any{
@@ -682,7 +687,7 @@ func TestarrayFilteredNodeGet(t *testing.T) {
 			manager: arrayFilteredNode{
 				arrayNode: arrayNode{node: node{name: "books"}},
 				key:       "author",
-				op:        "=",
+				op:        "==",
 				value:     "Nietzsche",
 			},
 			sourceData: map[string]any{
@@ -702,7 +707,7 @@ func TestarrayFilteredNodeGet(t *testing.T) {
 			manager: arrayFilteredNode{
 				arrayNode: arrayNode{node: node{name: "books"}},
 				key:       "author",
-				op:        "!",
+				op:        "!=",
 				value:     "Nietzsche",
 			},
 			sourceData: map[string]any{
@@ -788,7 +793,7 @@ func TestarrayFilteredNodePut(t *testing.T) {
 			manager: arrayFilteredNode{
 				arrayNode: arrayNode{node: node{name: "books"}},
 				key:       "price",
-				op:        "=",
+				op:        "==",
 				value:     5,
 			},
 			sourceData: map[string]any{
@@ -812,7 +817,7 @@ func TestarrayFilteredNodePut(t *testing.T) {
 			manager: arrayFilteredNode{
 				arrayNode: arrayNode{node: node{name: "books"}},
 				key:       "price",
-				op:        "=",
+				op:        "==",
 				value:     "5",
 			},
 			sourceData: map[string]any{
@@ -836,7 +841,7 @@ func TestarrayFilteredNodePut(t *testing.T) {
 			manager: arrayFilteredNode{
 				arrayNode: arrayNode{node: node{name: "books"}},
 				key:       "price",
-				op:        "!",
+				op:        "!=",
 				value:     5,
 			},
 			sourceData: map[string]any{
@@ -930,7 +935,7 @@ func TestarrayFilteredNodePut(t *testing.T) {
 			manager: arrayFilteredNode{
 				arrayNode: arrayNode{node: node{name: "books"}},
 				key:       "author",
-				op:        "=",
+				op:        "==",
 				value:     "Nietzsche",
 			},
 			sourceData: map[string]any{
@@ -954,7 +959,7 @@ func TestarrayFilteredNodePut(t *testing.T) {
 			manager: arrayFilteredNode{
 				arrayNode: arrayNode{node: node{name: "books"}},
 				key:       "author",
-				op:        "!",
+				op:        "!=",
 				value:     "Nietzsche",
 			},
 			sourceData: map[string]any{
