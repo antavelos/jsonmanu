@@ -44,16 +44,16 @@ type nodeDataAccessor interface {
 	namedNode
 
 	// Retrieves a value out of a given map according to the rules of the node called.
-	get(any) any
+	get(any) (any, error)
 
 	// Updates a given map according to the rules of the node called.
 	put(any, any) error
 }
 
-type DataValidationError string
+type SourceValidationError string
 
-func (err DataValidationError) Error() string {
-	return fmt.Sprintf("DataValidationError error: %s", string(err))
+func (err SourceValidationError) Error() string {
+	return fmt.Sprintf("SourceValidationError error: %s", string(err))
 }
 
 // Represents a simple JSON object node or leaf.
@@ -103,37 +103,35 @@ type arrayFilteredNode struct {
 // node
 // ----
 
-// validateSourceData ensures that the provided data can be used by the node for retrieval or update.
-func (n node) validateSourceData(sourceData any) (any, error) {
-	if !isMap(sourceData) {
-		return nil, DataValidationError(fmt.Sprintf("Source data is not a map: %#v", sourceData))
+// validateSource ensures that the provided data can be used by the node for retrieval or update.
+func (n node) validateSource(source any) error {
+	if !isMap(source) {
+		return SourceValidationError(fmt.Sprintf("Source data is not a map: %#v", source))
 	}
 
-	data, ok := sourceData.(map[string]any)[n.name]
-	if !ok {
-		return nil, DataValidationError(fmt.Sprintf("key '%v' not found", n.name))
+	if !mapHasKey(source, n.name) {
+		return SourceValidationError(fmt.Sprintf("key '%v' not found", n.name))
 	}
 
-	return data, nil
+	return nil
 }
 
 // get returns the value of the provided map data with key same as the name of the node.
-func (n node) get(sourceData any) any {
-	_, err := n.validateSourceData(sourceData)
-	if err != nil {
-		return nil
+func (n node) get(source any) (any, error) {
+	if err := n.validateSource(source); err != nil {
+		return nil, err
 	}
 
-	return sourceData.(map[string]any)[n.name]
+	return source.(map[string]any)[n.name], nil
 }
 
 // put updates the value of the provided map data with key same as the name of the node.
-func (n node) put(sourceData any, value any) error {
-	if _, err := n.validateSourceData(sourceData); err != nil {
+func (n node) put(source any, value any) error {
+	if err := n.validateSource(source); err != nil {
 		return err
 	}
 
-	sourceData.(map[string]any)[n.name] = value
+	source.(map[string]any)[n.name] = value
 
 	return nil
 }
@@ -145,18 +143,19 @@ func (n node) getName() string { return n.name }
 // arrayNode
 // ---------
 
-// validateSourceData ensures that the provided data can be used by the array node for retrieval or update
-func (n arrayNode) validateSourceData(sourceData any) (any, error) {
-	data, err := n.node.validateSourceData(sourceData)
-	if err != nil {
-		return nil, err
+// validateSource ensures that the provided data can be used by the array node for retrieval or update
+func (n arrayNode) validateSource(source any) error {
+	if err := n.node.validateSource(source); err != nil {
+		return err
 	}
 
-	if !isSlice(data) {
-		return nil, DataValidationError(fmt.Sprintf("Value of key '%v' is not an array: %#v", n.node.name, sourceData))
+	value, _ := source.(map[string]any)[n.name]
+
+	if !isSlice(value) {
+		return SourceValidationError(fmt.Sprintf("Value of key '%v' is not an array: %#v", n.node.name, source))
 	}
 
-	return data, nil
+	return nil
 }
 
 // ----------------
@@ -165,42 +164,44 @@ func (n arrayNode) validateSourceData(sourceData any) (any, error) {
 
 // get returns the value of the provided map data with key same as the name of the node.
 // The underlying value must be a slice and the returned value will be the slice
-// containing only the values of the `sourceData` defined by the indices of the node.
-func (n arrayIndexedNode) get(sourceData any) any {
-	data, err := n.validateSourceData(sourceData)
-	if err != nil {
-		return nil
+// containing only the values of the `source` defined by the indices of the node.
+func (n arrayIndexedNode) get(source any) (any, error) {
+	if err := n.validateSource(source); err != nil {
+		return nil, err
 	}
 
+	value := source.(map[string]any)[n.name]
+
 	if len(n.indices) == 0 {
-		return data
+		return value, nil
 	}
 
 	var result []any
 	for _, i := range n.indices {
-		if i < 0 || i >= len(data.([]any)) {
+		if i < 0 || i >= len(value.([]any)) {
 			continue
 		}
-		result = append(result, data.([]any)[i])
+		result = append(result, value.([]any)[i])
 	}
 
-	return result
+	return result, nil
 }
 
 // put updates the value of the provided map data with key same as the name of the node.
 // The underlying value must be a slice and the new value will apply on the slice
 // defined by the indices of the node.
-func (n arrayIndexedNode) put(sourceData any, value any) error {
-	data, err := n.validateSourceData(sourceData)
-	if err != nil {
+func (n arrayIndexedNode) put(source any, newVal any) error {
+	if err := n.validateSource(source); err != nil {
 		return err
 	}
 
+	value := source.(map[string]any)[n.name]
+
 	for _, i := range n.indices {
-		if i < 0 || i >= len(data.([]any)) {
+		if i < 0 || i >= len(value.([]any)) {
 			continue
 		}
-		data.([]any)[i] = value
+		value.([]any)[i] = newVal
 	}
 
 	return nil
@@ -216,48 +217,50 @@ func (n arrayIndexedNode) getName() string { return n.node.name }
 // get returns the value of the provided map data with key same as the name of the node.
 // The underlying value must be a slice and the returned value will be the subslice
 // defined by the start and end values of the node.
-func (n arraySlicedNode) get(sourceData any) any {
-	data, err := n.validateSourceData(sourceData)
-	if err != nil {
-		return nil
+func (n arraySlicedNode) get(source any) (any, error) {
+	if err := n.validateSource(source); err != nil {
+		return nil, err
 	}
 
+	value := source.(map[string]any)[n.name]
+
 	if n.start != 0 && n.end != 0 {
-		return data.([]any)[n.start:n.end]
+		return value.([]any)[n.start:n.end], nil
 	}
 
 	if n.start != 0 && n.end == 0 {
-		return data.([]any)[n.start:]
+		return value.([]any)[n.start:], nil
 	}
 
 	if n.start == 0 && n.end != 0 {
-		return data.([]any)[:n.end]
+		return value.([]any)[:n.end], nil
 	}
 
-	return sourceData
+	return source, nil
 }
 
 // put updates the value of the provided map data with key same as the name of the n.
 // The underlying value must be a slice and the new value will apply on the slice
 // defined by the indices of the n.
-func (n arraySlicedNode) put(sourceData any, value any) error {
-	data, err := n.validateSourceData(sourceData)
-	if err != nil {
+func (n arraySlicedNode) put(source any, newVal any) error {
+	if err := n.validateSource(source); err != nil {
 		return err
 	}
 
+	value := source.(map[string]any)[n.name]
+
 	if n.start != 0 && n.end != 0 {
-		data = data.([]any)[n.start:n.end]
+		value = value.([]any)[n.start:n.end]
 	} else if n.start != 0 && n.end == 0 {
-		data = data.([]any)[n.start:]
+		value = value.([]any)[n.start:]
 	} else if n.start == 0 && n.end != 0 {
-		data = data.([]any)[:n.end]
+		value = value.([]any)[:n.end]
 	} else {
 		return nil
 	}
 
-	for i, _ := range data.([]any) {
-		data.([]any)[i] = value
+	for i, _ := range value.([]any) {
+		value.([]any)[i] = newVal
 	}
 
 	return nil
@@ -371,44 +374,46 @@ func assertCondition(val1 any, val2 any, op string) bool {
 // get returns the value of the provided map data with key same as the name of the n.
 // The underlying value must be a slice and the returned value will be the subslice
 // that satisfies the condition defived by the key, value and operator of the n.
-func (n arrayFilteredNode) get(sourceData any) any {
-	data, err := n.validateSourceData(sourceData)
-	if err != nil {
-		return nil
+func (n arrayFilteredNode) get(source any) (any, error) {
+	if err := n.validateSource(source); err != nil {
+		return nil, err
 	}
 
-	var filtered []any
-	for _, item := range data.([]any) {
+	value := source.(map[string]any)[n.name]
+
+	var filteredVal []any
+	for _, item := range value.([]any) {
 		value, ok := item.(map[string]any)[n.key]
 		if !ok {
 			continue
 		}
 
 		if len(n.op) == 0 || n.value == nil || assertCondition(value, n.value, n.op) {
-			filtered = append(filtered, item)
+			filteredVal = append(filteredVal, item)
 		}
 	}
 
-	return filtered
+	return filteredVal, nil
 }
 
 // put updates the value of the provided map data with key same as the name of the n.
 // The underlying value must be a slice and the returned value will be the subslice
 // that satisfies the condition defived by the key, value and operator of the n.
-func (n arrayFilteredNode) put(sourceData any, value any) error {
-	data, err := n.validateSourceData(sourceData)
-	if err != nil {
+func (n arrayFilteredNode) put(source any, newVal any) error {
+	if err := n.validateSource(source); err != nil {
 		return err
 	}
 
-	for _, item := range data.([]any) {
+	value := source.(map[string]any)[n.name]
+
+	for _, item := range value.([]any) {
 		currValue, ok := item.(map[string]any)[n.key]
 		if !ok {
 			continue
 		}
 
 		if len(n.op) == 0 || n.value == nil || assertCondition(currValue, n.value, n.op) {
-			item.(map[string]any)[n.key] = value
+			item.(map[string]any)[n.key] = newVal
 		}
 	}
 
@@ -538,38 +543,50 @@ func isArrayNode(n nodeDataAccessor) bool {
 
 // walkNodes iterates through a slice of nodes and at the same time descends in the given `data` map object replacing it with the new value.
 // The value held in data at the end of the itaration will be returned.
-func walkNodes(data any, nodes []nodeDataAccessor) any {
+func walkNodes(data any, nodes []nodeDataAccessor) (any, error) {
+	var err error
+
 	withReccursiveDescent := false
-	for _, node := range nodes {
-		if node.getName() == "*" {
+	for _, n := range nodes {
+		if n.getName() == "*" {
 			continue
 		}
 
-		if node.getName() == "" {
+		if n.getName() == "" {
 			withReccursiveDescent = true
 			continue
 		}
 
 		if isSlice(data) {
-			var idata []any
+			var items []any
 			for _, item := range data.([]any) {
-				idata = append(idata, node.get(item))
+				value, err := n.get(item)
+				if err != nil {
+					return nil, err
+				}
+				items = append(items, value)
 			}
-			data = idata
+			data = items
 			continue
 		}
 
 		if withReccursiveDescent {
-			data = mapGetDeepFlattened(data, node.getName())
-			if isArrayNode(node) {
-				dataWithkey := map[string]any{node.getName(): data}
-				data = node.get(dataWithkey)
+			data = mapGetDeepFlattened(data, n.getName())
+			if isArrayNode(n) {
+				dataWithkey := map[string]any{n.getName(): data}
+				data, err = n.get(dataWithkey)
+				if err != nil {
+					return nil, err
+				}
 			}
 			continue
 		}
 
-		data = node.get(data)
+		data, err = n.get(data)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return data
+	return data, nil
 }

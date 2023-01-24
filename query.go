@@ -11,8 +11,6 @@ func (jpe JsonPathError) Error() string {
 	return fmt.Sprintf("JSONPath error: %s", string(jpe))
 }
 
-type JsonData map[string]any
-
 // splitJsonPath splits a string based on a `.` separator. However, the string is supposed to be a JSONPath so
 // the case of `@.` shall be specially handled.
 func splitJsonPath(path string) []string {
@@ -61,7 +59,10 @@ func Get(data any, path string) (any, error) {
 		return nil, err
 	}
 
-	data = walkNodes(data, nodes)
+	data, err = walkNodes(data, nodes)
+	if err != nil {
+		return nil, err
+	}
 
 	return data, nil
 }
@@ -83,7 +84,10 @@ func Put(data any, path string, value any) error {
 
 	allButLastNodes, lastNode := nodes[:nodesCount-1], nodes[nodesCount-1]
 
-	data = walkNodes(data, allButLastNodes)
+	data, err = walkNodes(data, allButLastNodes)
+	if err != nil {
+		return err
+	}
 
 	if isSlice(data) {
 		for _, item := range data.([]any) {
@@ -94,5 +98,7 @@ func Put(data any, path string, value any) error {
 		return nil
 	}
 
-	return lastNode.put(data, value)
+	err = lastNode.put(data, value)
+
+	return err
 }
