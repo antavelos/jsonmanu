@@ -79,7 +79,7 @@ func TestParse(t *testing.T) {
 			path: "$.books[0]",
 			expectedNodes: []nodeDataAccessor{
 				arrayIndexedNode{
-					arrayNode: arrayNode{node: node{name: "books"}},
+					node: node{name: "books"},
 					indices:   []int{0},
 				},
 			},
@@ -92,7 +92,7 @@ func TestParse(t *testing.T) {
 					name: "library",
 				},
 				arrayIndexedNode{
-					arrayNode: arrayNode{node: node{name: "books"}},
+					node: node{name: "books"},
 				},
 			},
 			expectedError: nil,
@@ -104,7 +104,7 @@ func TestParse(t *testing.T) {
 					name: "library",
 				},
 				arrayIndexedNode{
-					arrayNode: arrayNode{node: node{name: "books"}},
+					node: node{name: "books"},
 					indices:   []int{0},
 				},
 			},
@@ -117,7 +117,7 @@ func TestParse(t *testing.T) {
 					name: "library",
 				},
 				arrayIndexedNode{
-					arrayNode: arrayNode{node: node{name: "books"}},
+					node: node{name: "books"},
 					indices:   []int{0, 1, 2},
 				},
 			},
@@ -130,7 +130,7 @@ func TestParse(t *testing.T) {
 					name: "library",
 				},
 				arraySlicedNode{
-					arrayNode: arrayNode{node: node{name: "books"}},
+					node: node{name: "books"},
 					start:     1,
 				},
 			},
@@ -143,7 +143,7 @@ func TestParse(t *testing.T) {
 					name: "library",
 				},
 				arraySlicedNode{
-					arrayNode: arrayNode{node: node{name: "books"}},
+					node: node{name: "books"},
 					start:     1,
 					end:       2,
 				},
@@ -157,7 +157,7 @@ func TestParse(t *testing.T) {
 					name: "library",
 				},
 				arraySlicedNode{
-					arrayNode: arrayNode{node: node{name: "books"}},
+					node: node{name: "books"},
 					end:       2,
 				},
 			},
@@ -170,7 +170,7 @@ func TestParse(t *testing.T) {
 					name: "library",
 				},
 				arrayFilteredNode{
-					arrayNode: arrayNode{node: node{name: "books"}},
+					node: node{name: "books"},
 					key:       "price",
 					op:        "<",
 					value:     "10",
@@ -185,7 +185,7 @@ func TestParse(t *testing.T) {
 					name: "library",
 				},
 				arrayFilteredNode{
-					arrayNode: arrayNode{node: node{name: "books"}},
+					node: node{name: "books"},
 					key:       "isbn",
 					op:        "",
 					value:     "",
@@ -222,7 +222,7 @@ func TestParse(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("jsonmanu.parse(%v)=%v, %v", tc.path, tc.expectedNodes, tc.expectedError), func(t *testing.T) {
 			nodes, err := parse(tc.path)
-			if !cmp.Equal(tc.expectedNodes, nodes, cmp.AllowUnexported(node{}, arrayNode{}, arrayIndexedNode{}, arrayFilteredNode{}, arraySlicedNode{})) {
+			if !cmp.Equal(tc.expectedNodes, nodes, cmp.AllowUnexported(node{}, arrayIndexedNode{}, arrayFilteredNode{}, arraySlicedNode{})) {
 				t.Errorf("Expected nodes '%#v', but got '%#v'", tc.expectedNodes, nodes)
 			}
 			if !cmp.Equal(tc.expectedError, err) {

@@ -61,14 +61,9 @@ type node struct {
 	name string
 }
 
-// Parent object for array like JSON nodes.
-type arrayNode struct {
-	node
-}
-
 // Represents an indexed array node i.e. `books[2]`.
 type arrayIndexedNode struct {
-	arrayNode
+	node
 
 	// Holds the indices
 	indices []int
@@ -76,7 +71,7 @@ type arrayIndexedNode struct {
 
 // Represents an sliced array node i.e. `books[2:4]`.
 type arraySlicedNode struct {
-	arrayNode
+	node
 
 	// The start index
 	start int
@@ -87,7 +82,7 @@ type arraySlicedNode struct {
 
 // Represents a filtered array node i.e. `books[?(@.isbn)]`.
 type arrayFilteredNode struct {
-	arrayNode
+	node
 
 	// The property to filter with.
 	key string
@@ -104,13 +99,23 @@ type arrayFilteredNode struct {
 // ----
 
 // validateSource ensures that the provided data can be used by the node for retrieval or update.
-func (n node) validateSource(source any) error {
+func validateNodeSource(n nodeDataAccessor, source any) error {
+	nodeName := n.getName()
+
 	if !isMap(source) {
 		return SourceValidationError(fmt.Sprintf("Source data is not a map: %#v", source))
 	}
 
-	if !mapHasKey(source, n.name) {
-		return SourceValidationError(fmt.Sprintf("key '%v' not found", n.name))
+	if !mapHasKey(source, nodeName) {
+		return SourceValidationError(fmt.Sprintf("key '%v' not found", nodeName))
+	}
+
+	if isArrayNode(n) {
+		value, _ := source.(map[string]any)[nodeName]
+
+		if !isSlice(value) {
+			return SourceValidationError(fmt.Sprintf("Value of key '%v' is not an array: %#v", nodeName, value))
+		}
 	}
 
 	return nil
@@ -118,7 +123,7 @@ func (n node) validateSource(source any) error {
 
 // get returns the value of the provided map data with key same as the name of the node.
 func (n node) get(source any) (any, error) {
-	if err := n.validateSource(source); err != nil {
+	if err := validateNodeSource(n, source); err != nil {
 		return nil, err
 	}
 
@@ -127,7 +132,7 @@ func (n node) get(source any) (any, error) {
 
 // put updates the value of the provided map data with key same as the name of the node.
 func (n node) put(source any, value any) error {
-	if err := n.validateSource(source); err != nil {
+	if err := validateNodeSource(n, source); err != nil {
 		return err
 	}
 
@@ -139,25 +144,6 @@ func (n node) put(source any, value any) error {
 // getName returns the name of the node.
 func (n node) getName() string { return n.name }
 
-// ---------
-// arrayNode
-// ---------
-
-// validateSource ensures that the provided data can be used by the array node for retrieval or update
-func (n arrayNode) validateSource(source any) error {
-	if err := n.node.validateSource(source); err != nil {
-		return err
-	}
-
-	value, _ := source.(map[string]any)[n.name]
-
-	if !isSlice(value) {
-		return SourceValidationError(fmt.Sprintf("Value of key '%v' is not an array: %#v", n.node.name, source))
-	}
-
-	return nil
-}
-
 // ----------------
 // arrayIndexedNode
 // ----------------
@@ -166,7 +152,7 @@ func (n arrayNode) validateSource(source any) error {
 // The underlying value must be a slice and the returned value will be the slice
 // containing only the values of the `source` defined by the indices of the node.
 func (n arrayIndexedNode) get(source any) (any, error) {
-	if err := n.validateSource(source); err != nil {
+	if err := validateNodeSource(n, source); err != nil {
 		return nil, err
 	}
 
@@ -191,7 +177,7 @@ func (n arrayIndexedNode) get(source any) (any, error) {
 // The underlying value must be a slice and the new value will apply on the slice
 // defined by the indices of the node.
 func (n arrayIndexedNode) put(source any, newVal any) error {
-	if err := n.validateSource(source); err != nil {
+	if err := validateNodeSource(n, source); err != nil {
 		return err
 	}
 
@@ -218,7 +204,7 @@ func (n arrayIndexedNode) getName() string { return n.node.name }
 // The underlying value must be a slice and the returned value will be the subslice
 // defined by the start and end values of the node.
 func (n arraySlicedNode) get(source any) (any, error) {
-	if err := n.validateSource(source); err != nil {
+	if err := validateNodeSource(n, source); err != nil {
 		return nil, err
 	}
 
@@ -243,7 +229,7 @@ func (n arraySlicedNode) get(source any) (any, error) {
 // The underlying value must be a slice and the new value will apply on the slice
 // defined by the indices of the n.
 func (n arraySlicedNode) put(source any, newVal any) error {
-	if err := n.validateSource(source); err != nil {
+	if err := validateNodeSource(n, source); err != nil {
 		return err
 	}
 
@@ -307,7 +293,7 @@ func toFloat64(value any) (float64, error) {
 	return 0, errors.New("Can't convert to float64")
 }
 
-// isString returns whether the valus is of type string or not
+// isString returns whether the value is of type string or not
 func isString(value any) bool {
 	switch value.(type) {
 	case string:
@@ -360,7 +346,7 @@ func assertCondition(val1 any, val2 any, op string) bool {
 		if isString(val1) && isString(val2) {
 			return val1.(string) == val2.(string)
 		}
-	case "=!":
+	case "!=":
 		if areFloats {
 			return fval1 != fval2
 		}
@@ -376,7 +362,7 @@ func assertCondition(val1 any, val2 any, op string) bool {
 // The underlying value must be a slice and the returned value will be the subslice
 // that satisfies the condition defived by the key, value and operator of the n.
 func (n arrayFilteredNode) get(source any) (any, error) {
-	if err := n.validateSource(source); err != nil {
+	if err := validateNodeSource(n, source); err != nil {
 		return nil, err
 	}
 
@@ -401,7 +387,7 @@ func (n arrayFilteredNode) get(source any) (any, error) {
 // The underlying value must be a slice and the returned value will be the subslice
 // that satisfies the condition defived by the key, value and operator of the n.
 func (n arrayFilteredNode) put(source any, newVal any) error {
-	if err := n.validateSource(source); err != nil {
+	if err := validateNodeSource(n, source); err != nil {
 		return err
 	}
 
@@ -468,10 +454,8 @@ func nodeFromJsonPathSubNode(jsonPathSubNode string) nodeDataAccessor {
 	dict = getMatchDictionary(JSON_PATH_ARRAY_NODE_PATTERN, jsonPathSubNode)
 	if len(dict) > 0 {
 		return arrayIndexedNode{
-			arrayNode: arrayNode{
-				node: node{
-					name: dict["node"],
-				},
+			node: node{
+				name: dict["node"],
 			},
 		}
 	}
@@ -479,10 +463,8 @@ func nodeFromJsonPathSubNode(jsonPathSubNode string) nodeDataAccessor {
 	dict = getMatchDictionary(JSON_PATH_INDEXED_ARRAY_NODE_PATTERN, jsonPathSubNode)
 	if len(dict) > 0 {
 		node := arrayIndexedNode{
-			arrayNode: arrayNode{
-				node: node{
-					name: dict["node"],
-				},
+			node: node{
+				name: dict["node"],
 			},
 		}
 		indices := strings.Split(dict["indices"], ",")
@@ -497,10 +479,8 @@ func nodeFromJsonPathSubNode(jsonPathSubNode string) nodeDataAccessor {
 	dict = getMatchDictionary(JSON_PATH_SLICED_ARRAY_NODE_PATTERN, jsonPathSubNode)
 	if len(dict) > 0 {
 		node := arraySlicedNode{
-			arrayNode: arrayNode{
-				node: node{
-					name: dict["node"],
-				},
+			node: node{
+				name: dict["node"],
 			},
 		}
 		node.start, _ = strconv.Atoi(dict["start"])
@@ -512,10 +492,8 @@ func nodeFromJsonPathSubNode(jsonPathSubNode string) nodeDataAccessor {
 	dict = getMatchDictionary(JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, jsonPathSubNode)
 	if len(dict) > 0 {
 		return arrayFilteredNode{
-			arrayNode: arrayNode{
-				node: node{
-					name: dict["node"],
-				},
+			node: node{
+				name: dict["node"],
 			},
 			key:   dict["key"],
 			op:    dict["op"],
