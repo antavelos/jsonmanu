@@ -1,4 +1,4 @@
-# JSON MANipUlator v1.1.0
+# JSON MANipUlator v1.1.1
 [![Actions Status](https://github.com/antavelos/jsonmanu/workflows/Testing/badge.svg)](https://github.com/antavelos/jsonmanu/actions)
 [![GoDoc](https://godoc.org/github.com/antavelos/jsonmanu?status.svg)](https://godoc.org/github.com/antavelos/jsonmanu)
 

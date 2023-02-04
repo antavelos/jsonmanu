@@ -26,30 +26,30 @@ import (
 type MatchDictionaryTestCase struct {
 	pattern      string
 	str          string
-	expectedDict MatchDictionary
+	expectedDict matchDictionary
 }
 
 func TestGetMatchDictionary(t *testing.T) {
 	cases := []MatchDictionaryTestCase{
-		{`\w+`, "alex", MatchDictionary{}},
-		{`(?P<name>\w+)`, "", MatchDictionary{}},
-		{`(?P<name>\w+)`, "-", MatchDictionary{}},
-		{`(?P<name>\w+)`, "alex", MatchDictionary{"name": "alex"}},
-		{`^(?P<name>\w+) (?P<age>\d+)$`, "alex 40", MatchDictionary{"name": "alex", "age": "40"}},
-		{JSON_PATH_SIMPLE_NODE_PATTERN, "books", MatchDictionary{"node": "books"}},
-		{JSON_PATH_SIMPLE_NODE_PATTERN, "", MatchDictionary{"node": ""}},
-		{JSON_PATH_ARRAY_NODE_PATTERN, "books[*]", MatchDictionary{"node": "books"}},
-		{JSON_PATH_INDEXED_ARRAY_NODE_PATTERN, "books[1,2]", MatchDictionary{"node": "books", "indices": "1,2"}},
-		{JSON_PATH_SLICED_ARRAY_NODE_PATTERN, "books[-1:]", MatchDictionary{"node": "books", "start": "-1", "end": ""}},
-		{JSON_PATH_SLICED_ARRAY_NODE_PATTERN, "books[3:7]", MatchDictionary{"node": "books", "start": "3", "end": "7"}},
-		{JSON_PATH_SLICED_ARRAY_NODE_PATTERN, "books[:7]", MatchDictionary{"node": "books", "start": "", "end": "7"}},
-		{JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, "books[?(@.price)]", MatchDictionary{"node": "books", "key": "price", "op": "", "value": ""}},
-		{JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, "books[?(@.price < 10)]", MatchDictionary{"node": "books", "key": "price", "op": "<", "value": "10"}},
-		{JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, "books[?(@.price > 10)]", MatchDictionary{"node": "books", "key": "price", "op": ">", "value": "10"}},
-		{JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, "books[?(@.price >= 10)]", MatchDictionary{"node": "books", "key": "price", "op": ">=", "value": "10"}},
-		{JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, "books[?(@.price <= 10)]", MatchDictionary{"node": "books", "key": "price", "op": "<=", "value": "10"}},
-		{JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, "books[?(@.price == 10)]", MatchDictionary{"node": "books", "key": "price", "op": "==", "value": "10"}},
-		{JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, "books[?(@.price != 10)]", MatchDictionary{"node": "books", "key": "price", "op": "!=", "value": "10"}},
+		{`\w+`, "alex", matchDictionary{}},
+		{`(?P<name>\w+)`, "", matchDictionary{}},
+		{`(?P<name>\w+)`, "-", matchDictionary{}},
+		{`(?P<name>\w+)`, "alex", matchDictionary{"name": "alex"}},
+		{`^(?P<name>\w+) (?P<age>\d+)$`, "alex 40", matchDictionary{"name": "alex", "age": "40"}},
+		{JSON_PATH_SIMPLE_NODE_PATTERN, "books", matchDictionary{"node": "books"}},
+		{JSON_PATH_SIMPLE_NODE_PATTERN, "", matchDictionary{"node": ""}},
+		{JSON_PATH_ARRAY_NODE_PATTERN, "books[*]", matchDictionary{"node": "books"}},
+		{JSON_PATH_INDEXED_ARRAY_NODE_PATTERN, "books[1,2]", matchDictionary{"node": "books", "indices": "1,2"}},
+		{JSON_PATH_SLICED_ARRAY_NODE_PATTERN, "books[-1:]", matchDictionary{"node": "books", "start": "-1", "end": ""}},
+		{JSON_PATH_SLICED_ARRAY_NODE_PATTERN, "books[3:7]", matchDictionary{"node": "books", "start": "3", "end": "7"}},
+		{JSON_PATH_SLICED_ARRAY_NODE_PATTERN, "books[:7]", matchDictionary{"node": "books", "start": "", "end": "7"}},
+		{JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, "books[?(@.price)]", matchDictionary{"node": "books", "key": "price", "op": "", "value": ""}},
+		{JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, "books[?(@.price < 10)]", matchDictionary{"node": "books", "key": "price", "op": "<", "value": "10"}},
+		{JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, "books[?(@.price > 10)]", matchDictionary{"node": "books", "key": "price", "op": ">", "value": "10"}},
+		{JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, "books[?(@.price >= 10)]", matchDictionary{"node": "books", "key": "price", "op": ">=", "value": "10"}},
+		{JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, "books[?(@.price <= 10)]", matchDictionary{"node": "books", "key": "price", "op": "<=", "value": "10"}},
+		{JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, "books[?(@.price == 10)]", matchDictionary{"node": "books", "key": "price", "op": "==", "value": "10"}},
+		{JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, "books[?(@.price != 10)]", matchDictionary{"node": "books", "key": "price", "op": "!=", "value": "10"}},
 	}
 
 	for _, tc := range cases {

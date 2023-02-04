@@ -46,22 +46,24 @@ func parse(path string) ([]nodeDataAccessor, error) {
 	return nodes, nil
 }
 
-// Get retrieves a value out of the given map as it is described in the provided JSONPath.
+// Get retrieves a value out of a given map or a slice of maps as it is described in the provided JSONPath.
+// `data` has type `any` because it can be either a map or a slice.
 func Get(data any, path string) (any, error) {
 	nodes, err := parse(path)
 	if err != nil {
 		return nil, err
 	}
 
-	data, err = walkNodes(data, nodes)
+	result, err := walkNodes(data, nodes)
 	if err != nil {
 		return nil, err
 	}
 
-	return data, nil
+	return result, nil
 }
 
-// Put updates a given map as it is described in the provided JSONPath.
+// Put updates the branch(es) of a map or a slice of maps as it is described in the provided JSONPath with a new value.
+// `data` has type `any` because it can be either a map or a slice.
 func Put(data any, path string, value any) error {
 	nodes, err := parse(path)
 	if err != nil {

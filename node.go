@@ -408,10 +408,10 @@ func (n arrayFilteredNode) getName() string { return n.node.name }
 // node utils
 // ----------
 
-type MatchDictionary map[string]string
+type matchDictionary map[string]string
 
 // getMatchDictionary returns a map of placeholders and their values found in a string given a pattern with placeholders in it.
-func getMatchDictionary(patt string, s string) (dict MatchDictionary) {
+func getMatchDictionary(patt string, s string) (dict matchDictionary) {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("Recovered from: ", r)
