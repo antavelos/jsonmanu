@@ -10,29 +10,29 @@ import (
 
 // Full array JSONPath pattern.
 // Example: `books[*]`
-const JSON_PATH_ARRAY_NODE_PATTERN = `^(?P<node>\w+)\[\*\]$`
+const jsonPathArrayNodePattern = `^(?P<node>\w+)\[\*\]$`
 
 // Indexed array JSONPath pattern.
 // Examples:
 // - `books[2]`
 // - `books[1,2]`
-const JSON_PATH_INDEXED_ARRAY_NODE_PATTERN = `^(?P<node>\w+)\[(?P<indices>( *\d+,? *)+)\]$`
+const jsonPathIndexedArrayNodePattern = `^(?P<node>\w+)\[(?P<indices>( *\d+,? *)+)\]$`
 
 // Sliced array JSONPath pattern.
 // Examples:
 // - `books[:2]`
 // - `books[3:]`
 // - `books[1:2]`
-const JSON_PATH_SLICED_ARRAY_NODE_PATTERN = `^(?P<node>\w+)\[(?P<start>\-?\d*):(?P<end>\-?\d*)\]$`
+const jsonPathSlicedArrayNodePattern = `^(?P<node>\w+)\[(?P<start>\-?\d*):(?P<end>\-?\d*)\]$`
 
 // Filtered array JSONPath pattern.
 // Examples:
 // - `books[?(@.isbn)]`
 // - `books[?(@.price<10)]`
-const JSON_PATH_FILTERED_ARRAY_NODE_PATTERN = `^(?P<node>\w+)\[\?\(@\.(?P<key>\w+)\s*((?P<op>(\<|\>|(!=)|={2}|(<=)|(>=))?)\s*(?P<value>[\w\d]*))?\)\]$`
+const jsonPathFilteredArrayNodePattern = `^(?P<node>\w+)\[\?\(@\.(?P<key>\w+)\s*((?P<op>(\<|\>|(!=)|={2}|(<=)|(>=))?)\s*(?P<value>[\w\d]*))?\)\]$`
 
 // Simple JSON node pattern.
-const JSON_PATH_SIMPLE_NODE_PATTERN = `^(?P<node>(\w*|\*))$`
+const jsonPathSimpleNodePattern = `^(?P<node>(\w*|\*))$`
 
 // Interface to be implemented by all node like structs for name retrieval.
 type namedNode interface {
@@ -445,7 +445,7 @@ func getMatchDictionary(patt string, s string) (dict matchDictionary) {
 func nodeFromJsonPathSubNode(jsonPathSubNode string) nodeDataAccessor {
 	var dict map[string]string
 
-	dict = getMatchDictionary(JSON_PATH_ARRAY_NODE_PATTERN, jsonPathSubNode)
+	dict = getMatchDictionary(jsonPathArrayNodePattern, jsonPathSubNode)
 	if len(dict) > 0 {
 		return arrayIndexedNode{
 			node: node{
@@ -454,7 +454,7 @@ func nodeFromJsonPathSubNode(jsonPathSubNode string) nodeDataAccessor {
 		}
 	}
 
-	dict = getMatchDictionary(JSON_PATH_INDEXED_ARRAY_NODE_PATTERN, jsonPathSubNode)
+	dict = getMatchDictionary(jsonPathIndexedArrayNodePattern, jsonPathSubNode)
 	if len(dict) > 0 {
 		node := arrayIndexedNode{
 			node: node{
@@ -470,7 +470,7 @@ func nodeFromJsonPathSubNode(jsonPathSubNode string) nodeDataAccessor {
 		return node
 	}
 
-	dict = getMatchDictionary(JSON_PATH_SLICED_ARRAY_NODE_PATTERN, jsonPathSubNode)
+	dict = getMatchDictionary(jsonPathSlicedArrayNodePattern, jsonPathSubNode)
 	if len(dict) > 0 {
 		node := arraySlicedNode{
 			node: node{
@@ -483,7 +483,7 @@ func nodeFromJsonPathSubNode(jsonPathSubNode string) nodeDataAccessor {
 		return node
 	}
 
-	dict = getMatchDictionary(JSON_PATH_FILTERED_ARRAY_NODE_PATTERN, jsonPathSubNode)
+	dict = getMatchDictionary(jsonPathFilteredArrayNodePattern, jsonPathSubNode)
 	if len(dict) > 0 {
 		return arrayFilteredNode{
 			node: node{
@@ -495,7 +495,7 @@ func nodeFromJsonPathSubNode(jsonPathSubNode string) nodeDataAccessor {
 		}
 	}
 
-	dict = getMatchDictionary(JSON_PATH_SIMPLE_NODE_PATTERN, jsonPathSubNode)
+	dict = getMatchDictionary(jsonPathSimpleNodePattern, jsonPathSubNode)
 	if len(dict) > 0 {
 		return node{
 			name: dict["node"],
