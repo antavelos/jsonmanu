@@ -1,15 +1,58 @@
-# JSON MANipUlator v1.0.0
+# JSON MANipUlator v1.1.0
 [![Actions Status](https://github.com/antavelos/jsonmanu/workflows/Testing/badge.svg)](https://github.com/antavelos/jsonmanu/actions)
 [![GoDoc](https://godoc.org/github.com/antavelos/jsonmanu?status.svg)](https://godoc.org/github.com/antavelos/jsonmanu)
 
 **jsonmanu** is a Go library intended to be used as a JSON data retrieval and update tool utilizing the
 [JSONPath](https://goessner.net/articles/JsonPath/) notation.
 
+#### Table of contents
+- [JSON MANipUlator v1.1.0](#json-manipulator-v110)
+			- [Table of contents](#table-of-contents)
+	- [Installation](#installation)
+	- [JSONPath usecases](#jsonpath-usecases)
+	- [Filtering with expressions](#filtering-with-expressions)
+	- [Usage](#usage)
+		- [Get](#get)
+		- [Put](#put)
+	- [Testing](#testing)
+
+
 ## Installation
 You can install the library using the go toolchain:
 ```shell
 go get -u -v github.com/antavelos/jsonmanu
 ```
+
+## JSONPath usecases
+Here is the complete list of the JSONPath supported or not yet usecases
+
+| Expression | Description | Supported |
+|------------|-------------|-----------|
+| $ | The root object of array| YES |
+| .property |	Selects the specified property in a parent object. | YES |
+| ['property'] |	Selects the specified property in a parent object. | NO |
+| [n] |	Selects the n-th element from an array. Indexes are 0-based. | YES |
+| [index1,index2,...] |	Selects array elements with the specified indexes. Returns a list. | YES |
+| ..property |	Recursive descent: Searches for the specified property name recursively and returns an array of all values with this property name. Always returns a list, even if just one property is found. | YES |
+| * | Wildcard selects all elements in an object or an array, regardless of their names or indexes. For example, address.* means all properties of the address object, and book[\*] means all items of the book array. | YES |
+| [start:end] [start:] | Selects array elements from the start index and up to, but not including, end index. If end is omitted, selects all elements from start until the end of the array. Returns a list. | YES |
+| [:n] |	Selects the first n elements of the array. Returns a list. | YES |
+| [-n:] |	Selects the last n elements of the array. Returns a list. | NO |
+| [?(expression)] |	Filter expression. Selects all elements in an object or array that match the specified filter. Returns a list. You can see mre details in the [below](#filtering-with-expressions) section.| YES |
+| @	| Used in filter expressions to refer to the current node being processed. | YES |
+
+## Filtering with expressions
+With an expression you can filter array elements bases of the properties of its object items. The supported operators are `==`, `!=`, `<`, `>`, `<=`, `>=` and they apply on both numbers an strings. 
+
+Examples:
+* `$.books[?(author == "Nietzsche")]`  filters all the book authored by Nietzsche. 
+* `$.books[?(author != "Nietzsche")]` filters all the books except from those authored by Nietzsche.
+* `$.books[?(price == 10)]` filters all the books with price equal to 10.
+* `$.books[?(price != 10)]` filters all the books with price not equal to 10.
+* `$.books[?(price >= 10)]` filters all the books with price greater or equal to 10.
+* `$.books[?(price <= 10)]` filters all the books with price less or equal to 10.
+* `$.books[?(price > 10)]` filters all the books with price greater than 10.
+* `$.books[?(price < 10)]` filters all the books with price less than 10.
 
 ## Usage
 The main api of the library is `jsonmanu.Get()` used to retrieve specific branches/leafs of JSON data as described by the provided JSONPath and `jsonmanu.Put()` used to update specific branches/leafs of JSON data as described by the provided JSONPath.
@@ -200,27 +243,8 @@ func main() {
 	// map[author:Heraklitus price:10 title:Book6]]]]]
 }
 
-
 ```
-
-## JSONPath usecases
-Here is the complete list of the JSONPath supported or not yet usecases
-
-| Expression | Description | Supported |
-|------------|-------------|-----------|
-| $ | The root object of array| YES |
-| .property |	Selects the specified property in a parent object. | YES |
-| ['property'] |	Selects the specified property in a parent object. | NO |
-| [n] |	Selects the n-th element from an array. Indexes are 0-based. | YES |
-| [index1,index2,...] |	Selects array elements with the specified indexes. Returns a list. | YES |
-| ..property |	Recursive descent: Searches for the specified property name recursively and returns an array of all values with this property name. Always returns a list, even if just one property is found. | YES |
-| * | Wildcard selects all elements in an object or an array, regardless of their names or indexes. For example, address.* means all properties of the address object, and book[\*] means all items of the book array. | YES |
-| [start:end] [start:] | Selects array elements from the start index and up to, but not including, end index. If end is omitted, selects all elements from start until the end of the array. Returns a list. | YES |
-| [:n] |	Selects the first n elements of the array. Returns a list. | YES |
-| [-n:] |	Selects the last n elements of the array. Returns a list. | NO |
-| [?(expression)] |	Filter expression. Selects all elements in an object or array that match the specified filter. Returns a list.| YES |
-| @	| Used in filter expressions to refer to the current node being processed. | YES |
-
+  
 ## Testing
 ```shell
 go test -v
