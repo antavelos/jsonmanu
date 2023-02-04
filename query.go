@@ -5,12 +5,6 @@ import (
 	"strings"
 )
 
-type JsonPathError string
-
-func (jpe JsonPathError) Error() string {
-	return fmt.Sprintf("JSONPath error: %s", string(jpe))
-}
-
 // splitJsonPath splits a string based on a `.` separator. However, the string is supposed to be a JSONPath so
 // the case of `@.` shall be specially handled.
 func splitJsonPath(path string) []string {
@@ -30,11 +24,11 @@ func splitJsonPath(path string) []string {
 // parse translates a provided JSONPath to an array of node data accessors that can be used to retrieve values from or update a given map.
 func parse(path string) ([]nodeDataAccessor, error) {
 	if !strings.HasPrefix(path, "$.") {
-		return nil, JsonPathError("JSONPath should start with '$.'")
+		return nil, fmt.Errorf("JSONPath should start with '$.'")
 	}
 
 	if strings.HasSuffix(path, ".") {
-		return nil, JsonPathError("JSONPath should not end with '.'")
+		return nil, fmt.Errorf("JSONPath should not end with '.'")
 	}
 
 	jsonPathSubNodes := splitJsonPath(path)
@@ -43,7 +37,7 @@ func parse(path string) ([]nodeDataAccessor, error) {
 	for i, jsonPathSubNode := range jsonPathSubNodes[1:] {
 		node := nodeFromJsonPathSubNode(jsonPathSubNode)
 		if node == nil {
-			return nil, JsonPathError(fmt.Sprintf("Couldn't parse JSONPath substring %v: '%v'", i, jsonPathSubNode))
+			return nil, fmt.Errorf("Couldn't parse JSONPath substring %v: '%v'", i, jsonPathSubNode)
 		}
 
 		nodes = append(nodes, node)

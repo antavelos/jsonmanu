@@ -50,34 +50,6 @@ type nodeDataAccessor interface {
 	put(any, any) error
 }
 
-const (
-	SOURCE_VALIDATION_ERROR_NOT_MAP int = iota
-	SOURCE_VALIDATION_ERROR_KEY_NOT_FOUND
-	SOURCE_VALIDATION_ERROR_VALUE_NOT_ARRAY
-)
-
-type SourceValidationError struct {
-	source    any
-	key       string
-	value     any
-	errorType int
-}
-
-func (err SourceValidationError) Error() string {
-	prefix := "SourceValidationError"
-
-	switch err.errorType {
-	case SOURCE_VALIDATION_ERROR_NOT_MAP:
-		return fmt.Sprintf("%v: Source is not a map: '%#v'", prefix, err.source)
-	case SOURCE_VALIDATION_ERROR_KEY_NOT_FOUND:
-		return fmt.Sprintf("%v: Source key not found: '%v'", prefix, err.key)
-	case SOURCE_VALIDATION_ERROR_VALUE_NOT_ARRAY:
-		return fmt.Sprintf("%v: Value of key '%v' is not an array: %#v", prefix, err.key, err.value)
-	}
-
-	return prefix
-}
-
 // Represents a simple JSON object node or leaf.
 type node struct {
 	name string
@@ -125,18 +97,18 @@ func validateNodeSource(n nodeDataAccessor, source any) error {
 	nodeName := n.getName()
 
 	if !isMap(source) {
-		return SourceValidationError{source: source, errorType: SOURCE_VALIDATION_ERROR_NOT_MAP}
+		return fmt.Errorf("SourceValidationError: Source is not a map: '%#v'", source)
 	}
 
 	if !mapHasKey(source, nodeName) {
-		return SourceValidationError{key: nodeName, errorType: SOURCE_VALIDATION_ERROR_KEY_NOT_FOUND}
+		return fmt.Errorf("SourceValidationError: Source key not found: '%v'", nodeName)
 	}
 
 	if isArrayNode(n) {
 		value, _ := source.(map[string]any)[nodeName]
 
 		if !isSlice(value) {
-			return SourceValidationError{key: nodeName, value: value, errorType: SOURCE_VALIDATION_ERROR_VALUE_NOT_ARRAY}
+			return fmt.Errorf("SourceValidationError: Value of key '%v' is not an array: %#v", nodeName, value)
 		}
 	}
 

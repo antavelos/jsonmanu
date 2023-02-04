@@ -2,8 +2,9 @@ package jsonmanu
 
 import (
 	"fmt"
-	cmp "github.com/google/go-cmp/cmp"
 	"testing"
+
+	cmp "github.com/google/go-cmp/cmp"
 )
 
 type SplitJsonPAthTestCase struct {
@@ -53,37 +54,37 @@ func TestSplitJsonPath(t *testing.T) {
 }
 
 type JsonmanParseTestCase struct {
-	path          string
-	expectedNodes []nodeDataAccessor
-	expectedError error
+	path                 string
+	expectedNodes        []nodeDataAccessor
+	expectedErrorMessage string
 }
 
 func TestParse(t *testing.T) {
 	testCases := []JsonmanParseTestCase{
 		{
-			path:          "books",
-			expectedNodes: nil,
-			expectedError: JsonPathError("JSONPath should start with '$.'"),
+			path:                 "books",
+			expectedNodes:        nil,
+			expectedErrorMessage: "JSONPath should start with '$.'",
 		},
 		{
-			path:          "$.books.",
-			expectedNodes: nil,
-			expectedError: JsonPathError("JSONPath should not end with '.'"),
+			path:                 "$.books.",
+			expectedNodes:        nil,
+			expectedErrorMessage: "JSONPath should not end with '.'",
 		},
 		{
-			path:          "$.books. ",
-			expectedNodes: nil,
-			expectedError: JsonPathError("Couldn't parse JSONPath substring 1: ' '"),
+			path:                 "$.books. ",
+			expectedNodes:        nil,
+			expectedErrorMessage: "Couldn't parse JSONPath substring 1: ' '",
 		},
 		{
 			path: "$.books[0]",
 			expectedNodes: []nodeDataAccessor{
 				arrayIndexedNode{
-					node: node{name: "books"},
-					indices:   []int{0},
+					node:    node{name: "books"},
+					indices: []int{0},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 		},
 		{
 			path: "$.library.books[*]",
@@ -95,7 +96,7 @@ func TestParse(t *testing.T) {
 					node: node{name: "books"},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 		},
 		{
 			path: "$.library.books[0]",
@@ -104,11 +105,11 @@ func TestParse(t *testing.T) {
 					name: "library",
 				},
 				arrayIndexedNode{
-					node: node{name: "books"},
-					indices:   []int{0},
+					node:    node{name: "books"},
+					indices: []int{0},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 		},
 		{
 			path: "$.library.books[0,1,2]",
@@ -117,11 +118,11 @@ func TestParse(t *testing.T) {
 					name: "library",
 				},
 				arrayIndexedNode{
-					node: node{name: "books"},
-					indices:   []int{0, 1, 2},
+					node:    node{name: "books"},
+					indices: []int{0, 1, 2},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 		},
 		{
 			path: "$.library.books[1:]",
@@ -130,11 +131,11 @@ func TestParse(t *testing.T) {
 					name: "library",
 				},
 				arraySlicedNode{
-					node: node{name: "books"},
-					start:     1,
+					node:  node{name: "books"},
+					start: 1,
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 		},
 		{
 			path: "$.library.books[1:2]",
@@ -143,12 +144,12 @@ func TestParse(t *testing.T) {
 					name: "library",
 				},
 				arraySlicedNode{
-					node: node{name: "books"},
-					start:     1,
-					end:       2,
+					node:  node{name: "books"},
+					start: 1,
+					end:   2,
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 		},
 		{
 			path: "$.library.books[:2]",
@@ -158,10 +159,10 @@ func TestParse(t *testing.T) {
 				},
 				arraySlicedNode{
 					node: node{name: "books"},
-					end:       2,
+					end:  2,
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 		},
 		{
 			path: "$.library.books[?(@.price < 10)]",
@@ -170,13 +171,13 @@ func TestParse(t *testing.T) {
 					name: "library",
 				},
 				arrayFilteredNode{
-					node: node{name: "books"},
-					key:       "price",
-					op:        "<",
-					value:     "10",
+					node:  node{name: "books"},
+					key:   "price",
+					op:    "<",
+					value: "10",
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 		},
 		{
 			path: "$.library.books[?(@.isbn)]",
@@ -185,13 +186,13 @@ func TestParse(t *testing.T) {
 					name: "library",
 				},
 				arrayFilteredNode{
-					node: node{name: "books"},
-					key:       "isbn",
-					op:        "",
-					value:     "",
+					node:  node{name: "books"},
+					key:   "isbn",
+					op:    "",
+					value: "",
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 		},
 		{
 			path: "$..books",
@@ -203,7 +204,7 @@ func TestParse(t *testing.T) {
 					name: "books",
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 		},
 		{
 			path: "$..*",
@@ -215,28 +216,28 @@ func TestParse(t *testing.T) {
 					name: "*",
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("jsonmanu.parse(%v)=%v, %v", tc.path, tc.expectedNodes, tc.expectedError), func(t *testing.T) {
+		t.Run(fmt.Sprintf("jsonmanu.parse(%v)=%v, %v", tc.path, tc.expectedNodes, tc.expectedErrorMessage), func(t *testing.T) {
 			nodes, err := parse(tc.path)
 			if !cmp.Equal(tc.expectedNodes, nodes, cmp.AllowUnexported(node{}, arrayIndexedNode{}, arrayFilteredNode{}, arraySlicedNode{})) {
 				t.Errorf("Expected nodes '%#v', but got '%#v'", tc.expectedNodes, nodes)
 			}
-			if !cmp.Equal(tc.expectedError, err) {
-				t.Errorf("Expected error '%#v', but got '%#v'", tc.expectedError, err)
+			if (err == nil && len(tc.expectedErrorMessage) > 0) || (err != nil && err.Error() != tc.expectedErrorMessage) {
+				t.Errorf("Expected error message '%#v', but got '%#v'", tc.expectedErrorMessage, err.Error())
 			}
 		})
 	}
 }
 
 type JsonmanGetTestCase struct {
-	path          string
-	data          any
-	expectedError error
-	expectedData  any
+	path                 string
+	data                 any
+	expectedErrorMessage string
+	expectedData         any
 }
 
 func TestGet(t *testing.T) {
@@ -250,8 +251,8 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book3"},
 				},
 			},
-			expectedError: JsonPathError("JSONPath should start with '$.'"),
-			expectedData:  nil,
+			expectedErrorMessage: "JSONPath should start with '$.'",
+			expectedData:         nil,
 		},
 		{
 			path: "$.books.",
@@ -262,8 +263,8 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book3"},
 				},
 			},
-			expectedError: JsonPathError("JSONPath should not end with '.'"),
-			expectedData:  nil,
+			expectedErrorMessage: "JSONPath should not end with '.'",
+			expectedData:         nil,
 		},
 		{
 			path: "$.books",
@@ -274,7 +275,7 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book3"},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 			expectedData: []any{
 				map[string]any{"author": "Nietzsche", "title": "Book1"},
 				map[string]any{"author": "Nietzsche", "title": "Book2"},
@@ -292,7 +293,7 @@ func TestGet(t *testing.T) {
 					},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 			expectedData: []any{
 				map[string]any{"author": "Nietzsche", "title": "Book1"},
 				map[string]any{"author": "Nietzsche", "title": "Book2"},
@@ -308,7 +309,7 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book3"},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 			expectedData: []any{
 				map[string]any{"author": "Nietzsche", "title": "Book1"},
 				map[string]any{"author": "Nietzsche", "title": "Book2"},
@@ -326,7 +327,7 @@ func TestGet(t *testing.T) {
 					},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 			expectedData: []any{
 				map[string]any{"author": "Nietzsche", "title": "Book1"},
 				map[string]any{"author": "Nietzsche", "title": "Book2"},
@@ -342,7 +343,7 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book3"},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 			expectedData: []any{
 				map[string]any{"author": "Nietzsche", "title": "Book1"},
 				map[string]any{"author": "Nietzsche", "title": "Book2"},
@@ -358,7 +359,7 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book3"},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 			expectedData: []any{
 				map[string]any{"author": "Nietzsche", "title": "Book1"},
 				map[string]any{"author": "Nietzsche", "title": "Book2"},
@@ -374,7 +375,7 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book3"},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 			expectedData: []any{
 				map[string]any{"author": "Nietzsche", "title": "Book1"},
 				map[string]any{"author": "Nietzsche", "title": "Book2"},
@@ -390,7 +391,7 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book3"},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 			expectedData: []any{
 				map[string]any{"author": "Nietzsche", "title": "Book1"},
 			},
@@ -404,7 +405,7 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book3"},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 			expectedData: []any{
 				map[string]any{"author": "Nietzsche", "title": "Book1"},
 				map[string]any{"author": "Nietzsche", "title": "Book3"},
@@ -419,7 +420,7 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book3"},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 			expectedData: []any{
 				map[string]any{"author": "Nietzsche", "title": "Book2"},
 				map[string]any{"author": "Nietzsche", "title": "Book3"},
@@ -435,7 +436,7 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book4"},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 			expectedData: []any{
 				map[string]any{"author": "Nietzsche", "title": "Book2"},
 				map[string]any{"author": "Nietzsche", "title": "Book3"},
@@ -451,7 +452,7 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book4"},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 			expectedData: []any{
 				map[string]any{"author": "Nietzsche", "title": "Book1"},
 				map[string]any{"author": "Nietzsche", "title": "Book2"},
@@ -468,7 +469,7 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book4", "price": 10},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 			expectedData: []any{
 				map[string]any{"author": "Nietzsche", "title": "Book1", "price": 15},
 				map[string]any{"author": "Nietzsche", "title": "Book2", "price": 20},
@@ -484,7 +485,7 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book4", "price": 10},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 			expectedData: []any{
 				map[string]any{"author": "Nietzsche", "title": "Book1", "price": 15},
 				map[string]any{"author": "Nietzsche", "title": "Book2", "price": 20},
@@ -501,7 +502,7 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book4", "price": 10},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 			expectedData: []any{
 				map[string]any{"author": "Nietzsche", "title": "Book3", "price": 5},
 			},
@@ -516,7 +517,7 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book4", "price": 10},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 			expectedData: []any{
 				map[string]any{"author": "Nietzsche", "title": "Book3", "price": 5},
 				map[string]any{"author": "Nietzsche", "title": "Book4", "price": 10},
@@ -532,7 +533,7 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book4", "price": 10},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 			expectedData: []any{
 				map[string]any{"author": "Nietzsche", "title": "Book4", "price": 10},
 			},
@@ -547,8 +548,8 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Stirner", "title": "Book4", "price": 10},
 				},
 			},
-			expectedError: nil,
-			expectedData:  []any{"Nietzsche", "Nietzsche"},
+			expectedErrorMessage: "",
+			expectedData:         []any{"Nietzsche", "Nietzsche"},
 		},
 		{
 			path: "$.books[?(@.author == Nietzsche)]",
@@ -562,7 +563,7 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book4", "price": 10},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 			expectedData: []any{
 				map[string]any{"author": "Nietzsche", "title": "Book1", "price": 15},
 				map[string]any{"author": "Nietzsche", "title": "Book2", "price": 20},
@@ -580,7 +581,7 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book4", "price": 10},
 				},
 			},
-			expectedError: nil,
+			expectedErrorMessage: "",
 			expectedData: []any{
 				map[string]any{"author": "Nietzsche", "title": "Book2", "price": 20},
 				map[string]any{"author": "Nietzsche", "title": "Book4", "price": 10},
@@ -598,8 +599,8 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book4", "price": 10},
 				},
 			},
-			expectedError: nil,
-			expectedData:  []any{"Nietzsche", "Nietzsche", "Stirner", "Nietzsche", "Stirner", "Nietzsche"},
+			expectedErrorMessage: "",
+			expectedData:         []any{"Nietzsche", "Nietzsche", "Stirner", "Nietzsche", "Stirner", "Nietzsche"},
 		},
 		{
 			path: "$.books.author",
@@ -613,8 +614,8 @@ func TestGet(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book4", "price": 10},
 				},
 			},
-			expectedError: nil,
-			expectedData:  []any{"Nietzsche", "Nietzsche", "Stirner", "Nietzsche", "Stirner", "Nietzsche"},
+			expectedErrorMessage: "",
+			expectedData:         []any{"Nietzsche", "Nietzsche", "Stirner", "Nietzsche", "Stirner", "Nietzsche"},
 		},
 		{
 			path: "$.store..author",
@@ -630,8 +631,8 @@ func TestGet(t *testing.T) {
 					},
 				},
 			},
-			expectedError: nil,
-			expectedData:  []any{"Nietzsche", "Nietzsche", "Stirner", "Nietzsche", "Stirner", "Nietzsche"},
+			expectedErrorMessage: "",
+			expectedData:         []any{"Nietzsche", "Nietzsche", "Stirner", "Nietzsche", "Stirner", "Nietzsche"},
 		},
 		{
 			path: "$..author",
@@ -642,8 +643,8 @@ func TestGet(t *testing.T) {
 					},
 				},
 			},
-			expectedError: nil,
-			expectedData:  []any{"Nietzsche"},
+			expectedErrorMessage: "",
+			expectedData:         []any{"Nietzsche"},
 		},
 		{
 			path: "$..author",
@@ -659,8 +660,8 @@ func TestGet(t *testing.T) {
 					},
 				},
 			},
-			expectedError: nil,
-			expectedData:  []any{"Nietzsche", "Nietzsche", "Stirner", "Nietzsche", "Stirner", "Nietzsche"},
+			expectedErrorMessage: "",
+			expectedData:         []any{"Nietzsche", "Nietzsche", "Stirner", "Nietzsche", "Stirner", "Nietzsche"},
 		},
 		{
 			path: "$..price",
@@ -676,8 +677,8 @@ func TestGet(t *testing.T) {
 					},
 				},
 			},
-			expectedError: nil,
-			expectedData:  []any{15, 20, 15, 5, 10, 10},
+			expectedErrorMessage: "",
+			expectedData:         []any{15, 20, 15, 5, 10, 10},
 		},
 		{
 			path: "$..books[0].author",
@@ -693,18 +694,18 @@ func TestGet(t *testing.T) {
 					},
 				},
 			},
-			expectedError: nil,
-			expectedData:  []any{"Nietzsche"},
+			expectedErrorMessage: "",
+			expectedData:         []any{"Nietzsche"},
 		},
 	}
 
 	for i, tc := range testCases {
 
-		t.Run(fmt.Sprintf("(%v) - jsonmanu.Get(%v, %v)=%v, %v", i, tc.data, tc.path, tc.expectedData, tc.expectedError),
+		t.Run(fmt.Sprintf("(%v) - jsonmanu.Get(%v, %v)=%v, %v", i, tc.data, tc.path, tc.expectedData, tc.expectedErrorMessage),
 			func(t *testing.T) {
 				data, err := Get(tc.data, tc.path)
-				if err != tc.expectedError {
-					t.Errorf("Expected error '%#v', but got '%#v'", tc.expectedError, err)
+				if (err == nil && len(tc.expectedErrorMessage) > 0) || (err != nil && err.Error() != tc.expectedErrorMessage) {
+					t.Errorf("Expected error message '%#v', but got '%#v'", tc.expectedErrorMessage, err.Error())
 				}
 				if !cmp.Equal(tc.expectedData, data) {
 					t.Errorf("\n(%v) - Expected:\n '%#v\nbut got\n'%#v'", i, tc.expectedData, data)
@@ -714,11 +715,11 @@ func TestGet(t *testing.T) {
 }
 
 type JsonmanPutTestCase struct {
-	path                string
-	data                any
-	value               any
-	expectedError       error
-	expectedUpdatedData any
+	path                 string
+	data                 any
+	value                any
+	expectedErrorMessage string
+	expectedUpdatedData  any
 }
 
 func TestPut(t *testing.T) {
@@ -732,8 +733,8 @@ func TestPut(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book3"},
 				},
 			},
-			value:         1,
-			expectedError: JsonPathError("JSONPath should start with '$.'"),
+			value:                1,
+			expectedErrorMessage: "JSONPath should start with '$.'",
 			expectedUpdatedData: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
@@ -751,8 +752,8 @@ func TestPut(t *testing.T) {
 					map[string]any{"author": "Nietzsche", "title": "Book3"},
 				},
 			},
-			value:         1,
-			expectedError: JsonPathError("JSONPath should not end with '.'"),
+			value:                1,
+			expectedErrorMessage: "JSONPath should not end with '.'",
 			expectedUpdatedData: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
@@ -768,8 +769,8 @@ func TestPut(t *testing.T) {
 					"author": "Someone",
 				},
 			},
-			value:         "Someone else",
-			expectedError: nil,
+			value:                "Someone else",
+			expectedErrorMessage: "",
 			expectedUpdatedData: map[string]any{
 				"book": map[string]any{
 					"author": "Someone else",
@@ -784,8 +785,8 @@ func TestPut(t *testing.T) {
 					map[string]any{"author": "Someone"},
 				},
 			},
-			value:         "Someone else",
-			expectedError: nil,
+			value:                "Someone else",
+			expectedErrorMessage: "",
 			expectedUpdatedData: map[string]any{
 				"book": []any{
 					map[string]any{"author": "Someone else"},
@@ -801,8 +802,8 @@ func TestPut(t *testing.T) {
 					map[string]any{"author": "Someone"},
 				},
 			},
-			value:         "Someone else",
-			expectedError: nil,
+			value:                "Someone else",
+			expectedErrorMessage: "",
 			expectedUpdatedData: map[string]any{
 				"book": []any{
 					map[string]any{"author": "Someone else"},
@@ -818,8 +819,8 @@ func TestPut(t *testing.T) {
 					map[string]any{"author": "Someone"},
 				},
 			},
-			value:         "Someone else",
-			expectedError: nil,
+			value:                "Someone else",
+			expectedErrorMessage: "",
 			expectedUpdatedData: map[string]any{
 				"book": []any{
 					map[string]any{"author": "Someone else"},
@@ -836,8 +837,8 @@ func TestPut(t *testing.T) {
 					map[string]any{"author": "Someone"},
 				},
 			},
-			value:         "Someone else",
-			expectedError: nil,
+			value:                "Someone else",
+			expectedErrorMessage: "",
 			expectedUpdatedData: map[string]any{
 				"book": []any{
 					map[string]any{"author": "Someone else"},
@@ -855,8 +856,8 @@ func TestPut(t *testing.T) {
 					map[string]any{"author": "Someone"},
 				},
 			},
-			value:         "Someone else",
-			expectedError: nil,
+			value:                "Someone else",
+			expectedErrorMessage: "",
 			expectedUpdatedData: map[string]any{
 				"book": []any{
 					map[string]any{"author": "Someone"},
@@ -874,8 +875,8 @@ func TestPut(t *testing.T) {
 					map[string]any{"author": "Someone"},
 				},
 			},
-			value:         "Someone else",
-			expectedError: nil,
+			value:                "Someone else",
+			expectedErrorMessage: "",
 			expectedUpdatedData: map[string]any{
 				"book": []any{
 					map[string]any{"author": "Someone"},
@@ -898,8 +899,8 @@ func TestPut(t *testing.T) {
 					},
 				},
 			},
-			value:         5,
-			expectedError: nil,
+			value:                5,
+			expectedErrorMessage: "",
 			expectedUpdatedData: map[string]any{
 				"store": map[string]any{
 					"books": []any{
@@ -927,8 +928,8 @@ func TestPut(t *testing.T) {
 					},
 				},
 			},
-			value:         5,
-			expectedError: nil,
+			value:                5,
+			expectedErrorMessage: "",
 			expectedUpdatedData: map[string]any{
 				"store": map[string]any{
 					"books": []any{
@@ -958,8 +959,8 @@ func TestPut(t *testing.T) {
 					},
 				},
 			},
-			value:         5,
-			expectedError: nil,
+			value:                5,
+			expectedErrorMessage: "",
 			expectedUpdatedData: map[string]any{
 				"store": map[string]any{
 					"library": map[string]any{
@@ -983,8 +984,8 @@ func TestPut(t *testing.T) {
 					map[string]any{"author": "Someone"},
 				},
 			},
-			value:         "Someone else",
-			expectedError: nil,
+			value:                "Someone else",
+			expectedErrorMessage: "",
 			expectedUpdatedData: map[string]any{
 				"book": []any{
 					map[string]any{"author": "Someone else"},
@@ -1008,8 +1009,8 @@ func TestPut(t *testing.T) {
 					},
 				},
 			},
-			value:         "Someone else",
-			expectedError: nil,
+			value:                "Someone else",
+			expectedErrorMessage: "",
 			expectedUpdatedData: map[string]any{
 				"store1": map[string]any{
 					"books": []any{
@@ -1039,8 +1040,8 @@ func TestPut(t *testing.T) {
 					},
 				},
 			},
-			value:         5,
-			expectedError: nil,
+			value:                5,
+			expectedErrorMessage: "",
 			expectedUpdatedData: map[string]any{
 				"store": map[string]any{
 					"books": []any{
@@ -1068,8 +1069,8 @@ func TestPut(t *testing.T) {
 					},
 				},
 			},
-			value:         5,
-			expectedError: nil,
+			value:                5,
+			expectedErrorMessage: "",
 			expectedUpdatedData: map[string]any{
 				"store": map[string]any{
 					"books": []any{
@@ -1086,10 +1087,10 @@ func TestPut(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("(%v) - jsonmanu.Put(%v, %v, %v)=%v", i, tc.data, tc.path, tc.value, tc.expectedError), func(t *testing.T) {
+		t.Run(fmt.Sprintf("(%v) - jsonmanu.Put(%v, %v, %v)=%v", i, tc.data, tc.path, tc.value, tc.expectedErrorMessage), func(t *testing.T) {
 			err := Put(tc.data, tc.path, tc.value)
-			if err != tc.expectedError {
-				t.Errorf("Expected error '%#v', but got '%#v'", tc.expectedError, err)
+			if (err == nil && len(tc.expectedErrorMessage) > 0) || (err != nil && err.Error() != tc.expectedErrorMessage) {
+				t.Errorf("Expected error message '%#v', but got '%#v'", tc.expectedErrorMessage, err.Error())
 			}
 			if !cmp.Equal(tc.expectedUpdatedData, tc.data) {
 				t.Errorf("Expected '%#v', but got '%#v'", tc.expectedUpdatedData, tc.data)
