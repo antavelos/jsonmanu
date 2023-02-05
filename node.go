@@ -287,15 +287,6 @@ func toFloat64(value any) (float64, error) {
 	return 0, errors.New("Can't convert to float64")
 }
 
-// isString returns whether the value is of type string or not
-func isString(value any) bool {
-	switch value.(type) {
-	case string:
-		return true
-	}
-	return false
-}
-
 // assertCondition asserts the condition defined by the values and the operator.
 // The operator can be one of `=`, `!“, `<`, `>`, `<=`, `>=`
 // First a comparison will be attempted between floats (if applicable) and then between strings (if applicable)

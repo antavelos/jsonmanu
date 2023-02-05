@@ -1,5 +1,10 @@
 package jsonmanu
 
+import (
+	"fmt"
+	"strings"
+)
+
 const (
 	Object int = iota
 	Array
@@ -15,7 +20,7 @@ type JsonNode struct {
 }
 
 type Transformer interface {
-	Transform(value any) any
+	Transform(value any) (any, error)
 }
 
 type SplitTransformer struct {
@@ -23,8 +28,39 @@ type SplitTransformer struct {
 	Index int
 }
 
-func (t SplitTransformer) Transform(value any) any {
-	return value
+func (t SplitTransformer) Transform(value any) (any, error) {
+	if !isString(value) {
+		return nil, fmt.Errorf("SplitTransformer error: value is not a string.")
+	}
+
+	split := strings.Split(value.(string), t.Delim)
+
+	if t.Index >= len(split) {
+		return nil, fmt.Errorf("SplitTransformer error: Index out of bounds.")
+	}
+
+	if t.Index == -1 {
+		return split, nil
+	}
+
+	return split[t.Index], nil
+}
+
+type JoinTransformer struct {
+	Delim string
+}
+
+func (t JoinTransformer) Transform(value any) (string, error) {
+	if !isSlice(value) {
+		return "", fmt.Errorf("JoinTransformer error: value is not an array.")
+	}
+
+	var strSlice []string
+	for item := range iterAny(value, nil) {
+		strSlice = append(strSlice, fmt.Sprintf("%v", item))
+	}
+
+	return strings.Join(strSlice, t.Delim), nil
 }
 
 type ReplaceTransformer struct {
@@ -32,8 +68,12 @@ type ReplaceTransformer struct {
 	NewVal string
 }
 
-func (t ReplaceTransformer) Transform(value any) any {
-	return value
+func (t ReplaceTransformer) Transform(value any) (string, error) {
+	if !isString(value) {
+		return "", fmt.Errorf("ReplaceTransformer error: value is not a string.")
+	}
+
+	return strings.Replace(value.(string), t.OldVal, t.NewVal, -1), nil
 }
 
 type Mapper struct {
@@ -44,19 +84,22 @@ type Mapper struct {
 
 func Map(src any, dst any, mappers []Mapper) error {
 
-	for _, mapper := range mappers {
-		value, err := Get(src, mapper.SrcNode.Path)
+	for i, mapper := range mappers {
+		srcValue, err := Get(src, mapper.SrcNode.Path)
 		if err != nil {
-			return err
+			return fmt.Errorf("mapper[%v] error while getting value from source: %v", i, err)
 		}
 
 		if mapper.Transformer != nil {
-			value = mapper.Transformer.Transform(value)
+			srcValue, err = mapper.Transformer.Transform(srcValue)
+			if err != nil {
+				return fmt.Errorf("mapper[%v] error while transforming value: %v", i, err)
+			}
 		}
 
-		err = Put(dst, mapper.DstNode.Path, value)
+		err = Put(dst, mapper.DstNode.Path, srcValue)
 		if err != nil {
-			return err
+			return fmt.Errorf("mapper[%v] error while putting value in destination: %v", i, err)
 		}
 
 	}

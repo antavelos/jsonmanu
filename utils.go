@@ -17,6 +17,10 @@ func isMapOrSlice(t any) bool {
 	return isMap(t) || isSlice(t)
 }
 
+func isString(t any) bool {
+	return reflect.ValueOf(t).Kind() == reflect.String
+}
+
 // flattenArray flattens any array of arrays.
 // Example: flattenArray([1, 2, 3, [4, 5, [6, 7, [8, 9]]]]) = [1, 2, 3, 4, 5, 6, 7, 8, 9].
 func flattenArray(arr []any) (result []any) {
@@ -142,6 +146,7 @@ func sendOrQuit[T any](t T, out chan<- T, quit <-chan struct{}) bool {
 // iterMapKeys generates the keys of a given map
 func iterMapKeys(m any, quit <-chan struct{}) <-chan string {
 	out := make(chan string)
+
 	go func() {
 		defer close(out)
 
@@ -153,6 +158,24 @@ func iterMapKeys(m any, quit <-chan struct{}) <-chan string {
 			}
 		}
 	}()
+
+	return out
+}
+
+func iterAny(t any, quit <-chan struct{}) <-chan any {
+	out := make(chan any)
+
+	go func() {
+		defer close(out)
+
+		vm := reflect.ValueOf(t)
+		if vm.Kind() == reflect.Slice {
+			for i := 0; i < vm.Len(); i++ {
+				sendOrQuit(vm.Index(i).Interface(), out, quit)
+			}
+		}
+	}()
+
 	return out
 }
 
