@@ -183,3 +183,69 @@ func TestJoinSplitTransformer(t *testing.T) {
 		})
 	}
 }
+
+type MapTestCase struct {
+	src                   any
+	dst                   any
+	mappers               []Mapper
+	expectedDst           any
+	expectedErrorMessages []string
+}
+
+func TestMap(t *testing.T) {
+	cases := []MapTestCase{
+		{
+			src: map[string]any{
+				"library": map[string]any{
+					"books": []any{
+						map[string]any{"author": "Nietzsche"},
+						map[string]any{"author": "Stirner"},
+					},
+				},
+			},
+			dst: map[string]any{"authors": nil},
+			mappers: []Mapper{
+				Mapper{
+					SrcNode: JsonNode{Path: "$.library.books.author", Type: String},
+					DstNode: JsonNode{Path: "$.authors", Type: Array},
+				},
+			},
+			expectedDst:           map[string]any{"authors": []any{"Nietzsche", "Stirner"}},
+			expectedErrorMessages: []string{},
+		},
+		{
+			src: map[string]any{
+				"library": map[string]any{
+					"books": []any{
+						map[string]any{"author": "Nietzsche"},
+						map[string]any{"author": "Stirner"},
+					},
+				},
+			},
+			dst: map[string]any{},
+			mappers: []Mapper{
+				Mapper{
+					SrcNode: JsonNode{Path: "$.library.books.author", Type: String},
+					DstNode: JsonNode{Path: "$.authors", Type: Array},
+				},
+			},
+			expectedDst:           map[string]any{"authors": []any{"Nietzsche", "Stirner"}},
+			expectedErrorMessages: []string{},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(fmt.Sprintf("Map(%v, %v, %v)=%v", tc.src, tc.dst, tc.mappers, tc.expectedErrorMessages), func(t *testing.T) {
+			errors := Map(tc.src, tc.dst, tc.mappers)
+
+			for i, err := range errors {
+				if (err == nil && len(tc.expectedErrorMessages[i]) > 0) || (err != nil && err.Error() != tc.expectedErrorMessages[i]) {
+					t.Errorf("Expected error message '%#v', but got '%#v'", tc.expectedErrorMessages[i], err.Error())
+				}
+			}
+			if !cmp.Equal(tc.expectedDst, tc.dst) {
+				t.Errorf("Expected '%#v', but got '%#v'", tc.expectedDst, tc.dst)
+			}
+		})
+	}
+}

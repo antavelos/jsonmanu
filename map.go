@@ -5,20 +5,6 @@ import (
 	"strings"
 )
 
-const (
-	Object int = iota
-	Array
-	String
-	Number
-	Boolean
-	Null
-)
-
-type JsonNode struct {
-	Path string
-	Type int
-}
-
 type Transformer interface {
 	Transform(value any) (any, error)
 }
@@ -76,32 +62,46 @@ func (t ReplaceTransformer) Transform(value any) (string, error) {
 	return strings.Replace(value.(string), t.OldVal, t.NewVal, -1), nil
 }
 
+const (
+	Object int = iota
+	Array
+	String
+	Number
+	Boolean
+	Null
+)
+
+type JsonNode struct {
+	Path string
+	Type int
+}
+
 type Mapper struct {
 	SrcNode     JsonNode
 	DstNode     JsonNode
 	Transformer Transformer
 }
 
-func Map(src any, dst any, mappers []Mapper) error {
-
+func Map(src any, dst any, mappers []Mapper) []error {
+	var errors []error
 	for i, mapper := range mappers {
 		srcValue, err := Get(src, mapper.SrcNode.Path)
 		if err != nil {
-			return fmt.Errorf("mapper[%v] error while getting value from source: %v", i, err)
+			errors = append(errors, fmt.Errorf("mapper[%v] error while getting value from source: %v", i, err))
 		}
 
 		if mapper.Transformer != nil {
 			srcValue, err = mapper.Transformer.Transform(srcValue)
 			if err != nil {
-				return fmt.Errorf("mapper[%v] error while transforming value: %v", i, err)
+				errors = append(errors, fmt.Errorf("mapper[%v] error while transforming value: %v", i, err))
 			}
 		}
 
 		err = Put(dst, mapper.DstNode.Path, srcValue)
 		if err != nil {
-			return fmt.Errorf("mapper[%v] error while putting value in destination: %v", i, err)
+			errors = append(errors, fmt.Errorf("mapper[%v] error while putting value in destination: %v", i, err))
 		}
 
 	}
-	return nil
+	return errors
 }

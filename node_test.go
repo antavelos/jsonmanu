@@ -168,13 +168,6 @@ func TestNodePut(t *testing.T) {
 			expectedErrorMessage: "SourceValidationError: Source is not a map: '[]interface {}{1, 2, 3}'",
 			expectedUpdatedData:  []any{1, 2, 3},
 		},
-		{
-			manager:              node{"numbers"},
-			sourceData:           map[string]any{"book": []any{1, 2, 3}},
-			value:                100,
-			expectedErrorMessage: "SourceValidationError: Source key not found: 'numbers'",
-			expectedUpdatedData:  map[string]any{"book": []any{1, 2, 3}},
-		},
 	}
 
 	for _, tc := range testCases {

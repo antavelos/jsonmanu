@@ -1,8 +1,10 @@
 package jsonmanu
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 )
 
 func isMap(t any) bool {
@@ -187,4 +189,38 @@ func mapHasKey(m any, key string) bool {
 		}
 	}
 	return false
+}
+
+// toFloat converts any number like value or any string number to float64.
+func toFloat64(value any) (float64, error) {
+	switch v := value.(type) {
+	case int:
+		return float64(v), nil
+	case int8:
+		return float64(v), nil
+	case int16:
+		return float64(v), nil
+	case int32:
+		return float64(v), nil
+	case int64:
+		return float64(v), nil
+	case uint8:
+		return float64(v), nil
+	case uint16:
+		return float64(v), nil
+	case uint32:
+		return float64(v), nil
+	case uint64:
+		return float64(v), nil
+	case float32:
+		return float64(v), nil
+	case float64:
+		return float64(v), nil
+	case string:
+		fv, err := strconv.ParseFloat(v, 1)
+		if err == nil {
+			return fv, nil
+		}
+	}
+	return 0, errors.New("Can't convert to float64")
 }

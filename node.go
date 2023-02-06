@@ -1,7 +1,6 @@
 package jsonmanu
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -88,32 +87,60 @@ type arrayFilteredNode struct {
 	value any
 }
 
-// ----
-// node
-// ----
+const (
+	sourceValidationErrorNotMap int = iota
+	sourceValidationErrorKeyNotFound
+	sourceValidationErrorValueNotArray
+)
+
+type SourceValidationError struct {
+	source    any
+	key       string
+	value     any
+	errorType int
+}
+
+func (err SourceValidationError) Error() string {
+	prefix := "SourceValidationError"
+
+	switch err.errorType {
+	case sourceValidationErrorNotMap:
+		return fmt.Sprintf("%v: Source is not a map: '%#v'", prefix, err.source)
+	case sourceValidationErrorKeyNotFound:
+		return fmt.Sprintf("%v: Source key not found: '%v'", prefix, err.key)
+	case sourceValidationErrorValueNotArray:
+		return fmt.Sprintf("%v: Value of key '%v' is not an array: %#v", prefix, err.key, err.value)
+	}
+
+	return prefix
+}
 
 // validateSource ensures that the provided data can be used by the node for retrieval or update.
 func validateNodeSource(n nodeDataAccessor, source any) error {
 	nodeName := n.getName()
 
 	if !isMap(source) {
-		return fmt.Errorf("SourceValidationError: Source is not a map: '%#v'", source)
+		return SourceValidationError{source: source, errorType: sourceValidationErrorNotMap}
 	}
 
 	if !mapHasKey(source, nodeName) {
-		return fmt.Errorf("SourceValidationError: Source key not found: '%v'", nodeName)
+		return SourceValidationError{key: nodeName, errorType: sourceValidationErrorKeyNotFound}
 	}
 
 	if isArrayNode(n) {
 		value, _ := source.(map[string]any)[nodeName]
 
 		if !isSlice(value) {
-			return fmt.Errorf("SourceValidationError: Value of key '%v' is not an array: %#v", nodeName, value)
+			return SourceValidationError{key: nodeName, value: value, errorType: sourceValidationErrorValueNotArray}
 		}
 	}
 
 	return nil
 }
+
+// ----
+// node
+// ----
 
 // get returns the value of the provided map data with key same as the name of the node.
 func (n node) get(source any) (any, error) {
@@ -126,7 +153,10 @@ func (n node) get(source any) (any, error) {
 
 // put updates the value of the provided map data with key same as the name of the node.
 func (n node) put(source any, value any) error {
-	if err := validateNodeSource(n, source); err != nil {
+	err := validateNodeSource(n, source)
+
+	// the key not found error is excluded because the key will be created anyway below
+	if err != nil && err.(SourceValidationError).errorType != sourceValidationErrorKeyNotFound {
 		return err
 	}
 
@@ -239,7 +269,7 @@ func (n arraySlicedNode) put(source any, newVal any) error {
 		return nil
 	}
 
-	for i, _ := range value.([]any) {
+	for i := range value.([]any) {
 		value.([]any)[i] = newVal
 	}
 
@@ -252,40 +282,6 @@ func (n arraySlicedNode) getName() string { return n.node.name }
 // -----------------
 // arrayFilteredNode
 // -----------------
-
-// toFloat converts any number like value or any string number to float64.
-func toFloat64(value any) (float64, error) {
-	switch v := value.(type) {
-	case int:
-		return float64(v), nil
-	case int8:
-		return float64(v), nil
-	case int16:
-		return float64(v), nil
-	case int32:
-		return float64(v), nil
-	case int64:
-		return float64(v), nil
-	case uint8:
-		return float64(v), nil
-	case uint16:
-		return float64(v), nil
-	case uint32:
-		return float64(v), nil
-	case uint64:
-		return float64(v), nil
-	case float32:
-		return float64(v), nil
-	case float64:
-		return float64(v), nil
-	case string:
-		fv, err := strconv.ParseFloat(v, 1)
-		if err == nil {
-			return fv, nil
-		}
-	}
-	return 0, errors.New("Can't convert to float64")
-}
 
 // assertCondition asserts the condition defined by the values and the operator.
 // The operator can be one of `=`, `!“, `<`, `>`, `<=`, `>=`

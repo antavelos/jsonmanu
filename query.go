@@ -74,7 +74,7 @@ func Put(data any, path string, value any) error {
 
 	// handle reccursive descent in case the last node is a leaf node and its previous one
 	// is not known, i.e. "$..price"
-	if nodes[nodesCount-2].getName() == "" && !isArrayNode(nodes[nodesCount-1]) {
+	if nodesCount >= 2 && nodes[nodesCount-2].getName() == "" && !isArrayNode(nodes[nodesCount-1]) {
 		return mapPutDeep(data, nodes[nodesCount-1].getName(), value)
 	}
 
