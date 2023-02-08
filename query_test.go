@@ -1093,7 +1093,7 @@ func TestPut(t *testing.T) {
 				t.Errorf("Expected error message '%#v', but got '%#v'", tc.expectedErrorMessage, err.Error())
 			}
 			if !cmp.Equal(tc.expectedUpdatedData, tc.data) {
-				t.Errorf("Expected '%#v', but got '%#v'", tc.expectedUpdatedData, tc.data)
+				t.Errorf("Expected '%#s', but got '%#s'", prettify(tc.expectedUpdatedData), prettify(tc.data))
 			}
 		})
 	}

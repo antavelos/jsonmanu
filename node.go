@@ -155,6 +155,13 @@ func (n node) get(source any) (any, error) {
 func (n node) put(source any, value any) error {
 	err := validateNodeSource(n, source)
 
+	// if err != nil {
+
+	// 	switch err.(SourceValidationError).errorType {
+	// 	case sourceValidationErrorValueNotArray:
+	// 		return err
+	// 	}
+	// }
 	// the key not found error is excluded because the key will be created anyway below
 	if err != nil && err.(SourceValidationError).errorType != sourceValidationErrorKeyNotFound {
 		return err
@@ -506,14 +513,14 @@ func isArrayNode(n nodeDataAccessor) bool {
 func walkNodes(data any, nodes []nodeDataAccessor) (any, error) {
 	var err error
 
-	withReccursiveDescent := false
+	prevHasReccursiveDescent := false
 	for _, n := range nodes {
 		if n.getName() == "*" {
 			continue
 		}
 
 		if n.getName() == "" {
-			withReccursiveDescent = true
+			prevHasReccursiveDescent = true
 			continue
 		}
 
@@ -530,7 +537,7 @@ func walkNodes(data any, nodes []nodeDataAccessor) (any, error) {
 			continue
 		}
 
-		if withReccursiveDescent {
+		if prevHasReccursiveDescent {
 			data = mapGetDeepFlattened(data, n.getName())
 			if isArrayNode(n) {
 				dataWithkey := map[string]any{n.getName(): data}
@@ -539,6 +546,7 @@ func walkNodes(data any, nodes []nodeDataAccessor) (any, error) {
 					return nil, err
 				}
 			}
+			prevHasReccursiveDescent = false
 			continue
 		}
 

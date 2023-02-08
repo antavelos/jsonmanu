@@ -82,26 +82,47 @@ type Mapper struct {
 	Transformer Transformer
 }
 
-func Map(src any, dst any, mappers []Mapper) []error {
-	var errors []error
-	for i, mapper := range mappers {
-		srcValue, err := Get(src, mapper.SrcNode.Path)
-		if err != nil {
-			errors = append(errors, fmt.Errorf("mapper[%v] error while getting value from source: %v", i, err))
-		}
-
-		if mapper.Transformer != nil {
-			srcValue, err = mapper.Transformer.Transform(srcValue)
-			if err != nil {
-				errors = append(errors, fmt.Errorf("mapper[%v] error while transforming value: %v", i, err))
-			}
-		}
-
-		err = Put(dst, mapper.DstNode.Path, srcValue)
-		if err != nil {
-			errors = append(errors, fmt.Errorf("mapper[%v] error while putting value in destination: %v", i, err))
-		}
-
+func handleMapper(src any, dst any, mapper Mapper) error {
+	err := validateMapper(mapper)
+	if err != nil {
+		return fmt.Errorf("Validation error: %v", err)
 	}
-	return errors
+
+	srcValue, err := Get(src, mapper.SrcNode.Path)
+	if err != nil {
+		return fmt.Errorf("Error while getting value from source: %v", err)
+	}
+
+	if mapper.Transformer != nil {
+		srcValue, err = mapper.Transformer.Transform(srcValue)
+		if err != nil {
+			return fmt.Errorf("Error while transforming value: %v", err)
+		}
+	}
+
+	err = Put(dst, mapper.DstNode.Path, srcValue)
+	if err != nil {
+		return fmt.Errorf("Error while putting value in destination: %v", err)
+	}
+
+	return nil
+}
+
+func validateMapper(mapper Mapper) error {
+	if pathHasReccursiveDescent(mapper.DstNode.Path) {
+		return fmt.Errorf("reccursive descent not allowed in destination path")
+	}
+
+	return nil
+}
+
+func Map(src any, dst any, mappers []Mapper) (errors []error) {
+	for i, mapper := range mappers {
+		err := handleMapper(src, dst, mapper)
+		if err != nil {
+			errors = append(errors, fmt.Errorf("mapper[%v]: %s", i, err.Error()))
+		}
+	}
+
+	return
 }

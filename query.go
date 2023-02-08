@@ -5,6 +5,10 @@ import (
 	"strings"
 )
 
+func pathHasReccursiveDescent(path string) bool {
+	return strings.Contains(path, "..")
+}
+
 // splitJsonPath splits a string based on a `.` separator. However, the string is supposed to be a JSONPath so
 // the case of `@.` shall be specially handled.
 func splitJsonPath(path string) []string {
@@ -62,6 +66,30 @@ func Get(data any, path string) (any, error) {
 	return result, nil
 }
 
+// ensureDataStrunctureFromNodes creates the map tree structure in case in is not present so it can be safely used later by Put
+func ensureDataStrunctureFromNodes(data any, nodes []nodeDataAccessor) {
+
+	if len(nodes) == 0 {
+		return
+	}
+
+	if isSlice(data) {
+		for item := range iterAny(data, nil) {
+			ensureDataStrunctureFromNodes(item, nodes[1:])
+		}
+	} else if isMap(data) {
+		firstNodeName := nodes[0].getName()
+
+		val, ok := data.(map[string]any)[firstNodeName]
+		if !ok || val == nil {
+			data.(map[string]any)[firstNodeName] = make(map[string]any)
+			val, _ = data.(map[string]any)[firstNodeName]
+		}
+
+		ensureDataStrunctureFromNodes(val, nodes[1:])
+	}
+}
+
 // Put updates the branch(es) of a map or a slice of maps as it is described in the provided JSONPath with a new value.
 // `data` has type `any` because it can be either a map or a slice.
 func Put(data any, path string, value any) error {
@@ -70,23 +98,30 @@ func Put(data any, path string, value any) error {
 		return err
 	}
 
+	if !pathHasReccursiveDescent(path) {
+		ensureDataStrunctureFromNodes(data, nodes)
+	}
+
 	nodesCount := len(nodes)
 
-	// handle reccursive descent in case the last node is a leaf node and its previous one
-	// is not known, i.e. "$..price"
 	if nodesCount >= 2 && nodes[nodesCount-2].getName() == "" && !isArrayNode(nodes[nodesCount-1]) {
 		return mapPutDeep(data, nodes[nodesCount-1].getName(), value)
 	}
 
 	allButLastNodes, lastNode := nodes[:nodesCount-1], nodes[nodesCount-1]
 
-	data, err = walkNodes(data, allButLastNodes)
+	walkedData, err := walkNodes(data, allButLastNodes)
 	if err != nil {
-		return err
+		switch err.(SourceValidationError).errorType {
+		case sourceValidationErrorNotMap, sourceValidationErrorValueNotArray:
+			return err
+		case sourceValidationErrorKeyNotFound:
+			walkedData = data
+		}
 	}
 
-	if isSlice(data) {
-		for _, item := range data.([]any) {
+	if isSlice(walkedData) {
+		for _, item := range walkedData.([]any) {
 			if err := lastNode.put(item, value); err != nil {
 				return err
 			}
@@ -94,7 +129,7 @@ func Put(data any, path string, value any) error {
 		return nil
 	}
 
-	err = lastNode.put(data, value)
+	err = lastNode.put(walkedData, value)
 
 	return err
 }

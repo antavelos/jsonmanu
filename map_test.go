@@ -232,10 +232,113 @@ func TestMap(t *testing.T) {
 			expectedDst:           map[string]any{"authors": []any{"Nietzsche", "Stirner"}},
 			expectedErrorMessages: []string{},
 		},
+		{
+			src: map[string]any{
+				"library": map[string]any{
+					"books": []any{
+						map[string]any{"author": "Nietzsche"},
+						map[string]any{"author": "Stirner"},
+					},
+				},
+			},
+			dst: map[string]any{"authors": []int{1, 2, 3}},
+			mappers: []Mapper{
+				Mapper{
+					SrcNode: JsonNode{Path: "$.library.books.author", Type: String},
+					DstNode: JsonNode{Path: "$.authors", Type: Array},
+				},
+			},
+			expectedDst:           map[string]any{"authors": []any{"Nietzsche", "Stirner"}},
+			expectedErrorMessages: []string{},
+		},
+		{
+			src: map[string]any{
+				"library": map[string]any{
+					"books": []any{
+						map[string]any{"author": "Nietzsche"},
+						map[string]any{"author": "Stirner"},
+					},
+				},
+			},
+			dst: map[string]any{"authors": nil},
+			mappers: []Mapper{
+				Mapper{
+					SrcNode: JsonNode{Path: "$.library.books.author", Type: String},
+					DstNode: JsonNode{Path: "$.library.authors", Type: Array},
+				},
+			},
+			expectedDst:           map[string]any{"authors": nil, "library": map[string]any{"authors": []any{"Nietzsche", "Stirner"}}},
+			expectedErrorMessages: []string{},
+		},
+		{
+			src: map[string]any{
+				"library": map[string]any{
+					"books": []any{
+						map[string]any{"author": "Nietzsche"},
+						map[string]any{"author": "Stirner"},
+					},
+					"categories": []any{
+						map[string]any{"name": "Philosophy"},
+						map[string]any{"name": "Literature"},
+					},
+				},
+			},
+			dst: make(map[string]any),
+			mappers: []Mapper{
+				Mapper{
+					SrcNode: JsonNode{Path: "$.library.books.author", Type: String},
+					DstNode: JsonNode{Path: "$.library.authors", Type: Array},
+				},
+				Mapper{
+					SrcNode: JsonNode{Path: "$.library.categories.name", Type: String},
+					DstNode: JsonNode{Path: "$.library.categories", Type: Array},
+				},
+			},
+			expectedDst: map[string]any{
+				"library": map[string]any{
+					"authors": []any{
+						"Nietzsche", "Stirner",
+					},
+					"categories": []any{
+						"Philosophy", "Literature",
+					},
+				},
+			},
+			expectedErrorMessages: []string{},
+		},
+		{
+			src: map[string]any{
+				"library": map[string]any{
+					"books": []any{
+						map[string]any{"author": "Nietzsche"},
+						map[string]any{"author": "Stirner"},
+					},
+					"categories": []any{
+						map[string]any{"name": "Philosophy"},
+						map[string]any{"name": "Literature"},
+					},
+				},
+			},
+			dst: nil,
+			mappers: []Mapper{
+				Mapper{
+					SrcNode: JsonNode{Path: "$.library.books.author", Type: String},
+					DstNode: JsonNode{Path: "$.library.authors", Type: Array},
+				},
+				Mapper{
+					SrcNode: JsonNode{Path: "$.library.categories.name", Type: String},
+					DstNode: JsonNode{Path: "$.library.categories", Type: Array},
+				},
+			},
+			expectedDst: nil,
+			expectedErrorMessages: []string{
+				"mapper[0]: Error while putting value in destination: SourceValidationError: Source is not a map: '<nil>'",
+				"mapper[1]: Error while putting value in destination: SourceValidationError: Source is not a map: '<nil>'"},
+		},
 	}
 
-	for _, tc := range cases {
-		t.Run(fmt.Sprintf("Map(%v, %v, %v)=%v", tc.src, tc.dst, tc.mappers, tc.expectedErrorMessages), func(t *testing.T) {
+	for i, tc := range cases {
+		t.Run(fmt.Sprintf("[%v] Map(%v, %v, %v)=%v", i, tc.src, tc.dst, tc.mappers, tc.expectedErrorMessages), func(t *testing.T) {
 			errors := Map(tc.src, tc.dst, tc.mappers)
 
 			for i, err := range errors {
@@ -244,7 +347,7 @@ func TestMap(t *testing.T) {
 				}
 			}
 			if !cmp.Equal(tc.expectedDst, tc.dst) {
-				t.Errorf("Expected '%#v', but got '%#v'", tc.expectedDst, tc.dst)
+				t.Errorf("Expected '%s', but got '%s'", prettify(tc.expectedDst), prettify(tc.dst))
 			}
 		})
 	}

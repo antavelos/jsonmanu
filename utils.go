@@ -1,6 +1,7 @@
 package jsonmanu
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -223,4 +224,12 @@ func toFloat64(value any) (float64, error) {
 		}
 	}
 	return 0, errors.New("Can't convert to float64")
+}
+
+func prettify(x any) any {
+	b, err := json.MarshalIndent(x, "", "  ")
+	if err != nil {
+		return x
+	}
+	return b
 }
