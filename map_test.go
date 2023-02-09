@@ -332,8 +332,8 @@ func TestMap(t *testing.T) {
 			},
 			expectedDst: nil,
 			expectedErrorMessages: []string{
-				"mapper[0]: Error while putting value in destination: SourceValidationError: Source is not a map: '<nil>'",
-				"mapper[1]: Error while putting value in destination: SourceValidationError: Source is not a map: '<nil>'"},
+				"mapper[0]: Error while putting value in destination: DataValidationError: Data is not a map: '<nil>'",
+				"mapper[1]: Error while putting value in destination: DataValidationError: Data is not a map: '<nil>'"},
 		},
 	}
 

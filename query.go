@@ -112,10 +112,10 @@ func Put(data any, path string, value any) error {
 
 	walkedData, err := walkNodes(data, allButLastNodes)
 	if err != nil {
-		switch err.(SourceValidationError).errorType {
-		case sourceValidationErrorNotMap, sourceValidationErrorValueNotArray:
+		switch err.(DataValidationError).errorType {
+		case dataValidationErrorNotMap, dataValidationErrorValueNotArray:
 			return err
-		case sourceValidationErrorKeyNotFound:
+		case dataValidationErrorKeyNotFound:
 			walkedData = data
 		}
 	}

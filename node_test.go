@@ -108,13 +108,13 @@ func TestNodeGet(t *testing.T) {
 			manager:              node{"books"},
 			sourceData:           map[string]any{"book": []any{1, 2, 3}},
 			expectedData:         nil,
-			expectedErrorMessage: "SourceValidationError: Source key not found: 'books'",
+			expectedErrorMessage: "DataValidationError: Source key not found: 'books'",
 		},
 		{
 			manager:              node{"books"},
 			sourceData:           []any{1, 2, 3},
 			expectedData:         nil,
-			expectedErrorMessage: "SourceValidationError: Source is not a map: '[]interface {}{1, 2, 3}'",
+			expectedErrorMessage: "DataValidationError: Data is not a map: '[]interface {}{1, 2, 3}'",
 		},
 	}
 
@@ -158,14 +158,14 @@ func TestNodePut(t *testing.T) {
 			manager:              node{"numbers"},
 			sourceData:           []any{1, 2, 3},
 			value:                []any{2.3, 4.5, 6.7},
-			expectedErrorMessage: "SourceValidationError: Source is not a map: '[]interface {}{1, 2, 3}'",
+			expectedErrorMessage: "DataValidationError: Data is not a map: '[]interface {}{1, 2, 3}'",
 			expectedUpdatedData:  []any{1, 2, 3},
 		},
 		{
 			manager:              node{"numbers"},
 			sourceData:           []any{1, 2, 3},
 			value:                100,
-			expectedErrorMessage: "SourceValidationError: Source is not a map: '[]interface {}{1, 2, 3}'",
+			expectedErrorMessage: "DataValidationError: Data is not a map: '[]interface {}{1, 2, 3}'",
 			expectedUpdatedData:  []any{1, 2, 3},
 		},
 	}
@@ -192,7 +192,7 @@ func TestArrayIndexedNodeGet(t *testing.T) {
 			},
 			sourceData:           []any{1, 2, 3},
 			expectedData:         nil,
-			expectedErrorMessage: "SourceValidationError: Source is not a map: '[]interface {}{1, 2, 3}'",
+			expectedErrorMessage: "DataValidationError: Data is not a map: '[]interface {}{1, 2, 3}'",
 		},
 		{
 			manager: arrayIndexedNode{
@@ -237,7 +237,7 @@ func TestArrayIndexedNodeGet(t *testing.T) {
 			},
 			sourceData:           map[string]any{"books": 1},
 			expectedData:         nil,
-			expectedErrorMessage: "SourceValidationError: Value of key 'books' is not an array: 1",
+			expectedErrorMessage: "DataValidationError: Value of key 'books' is not an array: 1",
 		},
 		{
 			manager: arrayIndexedNode{
@@ -294,7 +294,7 @@ func TestArrayIndexedNodePut(t *testing.T) {
 			},
 			sourceData:           []any{1, 2, 3},
 			value:                100,
-			expectedErrorMessage: "SourceValidationError: Source is not a map: '[]interface {}{1, 2, 3}'",
+			expectedErrorMessage: "DataValidationError: Data is not a map: '[]interface {}{1, 2, 3}'",
 			expectedUpdatedData:  []any{1, 2, 3},
 		},
 		{
@@ -304,7 +304,7 @@ func TestArrayIndexedNodePut(t *testing.T) {
 			},
 			sourceData:           map[string]any{"book": []any{1, 2, 3}},
 			value:                100,
-			expectedErrorMessage: "SourceValidationError: Source key not found: 'books'",
+			expectedErrorMessage: "DataValidationError: Source key not found: 'books'",
 			expectedUpdatedData:  map[string]any{"book": []any{1, 2, 3}},
 		},
 		{
@@ -314,7 +314,7 @@ func TestArrayIndexedNodePut(t *testing.T) {
 			},
 			sourceData:           map[string]any{"books": 1},
 			value:                100,
-			expectedErrorMessage: "SourceValidationError: Value of key 'books' is not an array: 1",
+			expectedErrorMessage: "DataValidationError: Value of key 'books' is not an array: 1",
 			expectedUpdatedData:  map[string]any{"books": 1},
 		},
 	}
@@ -376,7 +376,7 @@ func TestArraySlicedNodeGet(t *testing.T) {
 			},
 			sourceData:           map[string]any{"books": []any{1, 2, 3}},
 			expectedData:         nil,
-			expectedErrorMessage: "SourceValidationError: Source key not found: 'book'",
+			expectedErrorMessage: "DataValidationError: Source key not found: 'book'",
 		},
 		{
 			manager: arraySlicedNode{
@@ -386,7 +386,7 @@ func TestArraySlicedNodeGet(t *testing.T) {
 			},
 			sourceData:           map[string]any{"books": 1},
 			expectedData:         nil,
-			expectedErrorMessage: "SourceValidationError: Value of key 'books' is not an array: 1",
+			expectedErrorMessage: "DataValidationError: Value of key 'books' is not an array: 1",
 		},
 	}
 
@@ -466,7 +466,7 @@ func TestArraySlicedNodePut(t *testing.T) {
 			},
 			sourceData:           []any{1, 2, 3},
 			value:                100,
-			expectedErrorMessage: "SourceValidationError: Source is not a map: '[]interface {}{1, 2, 3}'",
+			expectedErrorMessage: "DataValidationError: Data is not a map: '[]interface {}{1, 2, 3}'",
 			expectedUpdatedData:  []any{1, 2, 3},
 		},
 		{
@@ -477,7 +477,7 @@ func TestArraySlicedNodePut(t *testing.T) {
 			},
 			sourceData:           map[string]any{"book": []any{1, 2, 3}},
 			value:                100,
-			expectedErrorMessage: "SourceValidationError: Source key not found: 'books'",
+			expectedErrorMessage: "DataValidationError: Source key not found: 'books'",
 			expectedUpdatedData:  map[string]any{"book": []any{1, 2, 3}},
 		},
 		{
@@ -488,7 +488,7 @@ func TestArraySlicedNodePut(t *testing.T) {
 			},
 			sourceData:           map[string]any{"books": 1},
 			value:                100,
-			expectedErrorMessage: "SourceValidationError: Value of key 'books' is not an array: 1",
+			expectedErrorMessage: "DataValidationError: Value of key 'books' is not an array: 1",
 			expectedUpdatedData:  map[string]any{"books": 1},
 		},
 	}
@@ -728,7 +728,7 @@ func TestArrayFilteredNodeGet(t *testing.T) {
 				value: "Nietzsche",
 			},
 			sourceData:           []any{1, 2, 3},
-			expectedErrorMessage: "SourceValidationError: Source is not a map: '[]interface {}{1, 2, 3}'",
+			expectedErrorMessage: "DataValidationError: Data is not a map: '[]interface {}{1, 2, 3}'",
 		},
 		{
 			manager: arrayFilteredNode{
@@ -738,7 +738,7 @@ func TestArrayFilteredNodeGet(t *testing.T) {
 				value: "Nietzsche",
 			},
 			sourceData:           map[string]any{"book": []any{1, 2, 3}},
-			expectedErrorMessage: "SourceValidationError: Source key not found: 'books'",
+			expectedErrorMessage: "DataValidationError: Source key not found: 'books'",
 		},
 		{
 			manager: arrayFilteredNode{
@@ -748,7 +748,7 @@ func TestArrayFilteredNodeGet(t *testing.T) {
 				value: "Nietzsche",
 			},
 			sourceData:           map[string]any{"books": 1},
-			expectedErrorMessage: "SourceValidationError: Value of key 'books' is not an array: 1",
+			expectedErrorMessage: "DataValidationError: Value of key 'books' is not an array: 1",
 		},
 	}
 
@@ -1016,7 +1016,7 @@ func TestArrayFilteredNodePut(t *testing.T) {
 			},
 			sourceData:           []any{1, 2, 3},
 			value:                100,
-			expectedErrorMessage: "SourceValidationError: Source is not a map: '[]interface {}{1, 2, 3}'",
+			expectedErrorMessage: "DataValidationError: Data is not a map: '[]interface {}{1, 2, 3}'",
 			expectedUpdatedData:  []any{1, 2, 3},
 		},
 		{
@@ -1028,7 +1028,7 @@ func TestArrayFilteredNodePut(t *testing.T) {
 			},
 			sourceData:           map[string]any{"book": []any{1, 2, 3}},
 			value:                100,
-			expectedErrorMessage: "SourceValidationError: Source key not found: 'books'",
+			expectedErrorMessage: "DataValidationError: Source key not found: 'books'",
 			expectedUpdatedData:  map[string]any{"book": []any{1, 2, 3}},
 		},
 		{
@@ -1040,7 +1040,7 @@ func TestArrayFilteredNodePut(t *testing.T) {
 			},
 			sourceData:           map[string]any{"books": 1},
 			value:                100,
-			expectedErrorMessage: "SourceValidationError: Value of key 'books' is not an array: 1",
+			expectedErrorMessage: "DataValidationError: Value of key 'books' is not an array: 1",
 			expectedUpdatedData:  map[string]any{"books": 1},
 		},
 	}
