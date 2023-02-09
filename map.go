@@ -36,7 +36,7 @@ type JoinTransformer struct {
 	Delim string
 }
 
-func (t JoinTransformer) Transform(value any) (string, error) {
+func (t JoinTransformer) Transform(value any) (any, error) {
 	if !isSlice(value) {
 		return "", fmt.Errorf("JoinTransformer error: value is not an array.")
 	}
@@ -54,7 +54,7 @@ type ReplaceTransformer struct {
 	NewVal string
 }
 
-func (t ReplaceTransformer) Transform(value any) (string, error) {
+func (t ReplaceTransformer) Transform(value any) (any, error) {
 	if !isString(value) {
 		return "", fmt.Errorf("ReplaceTransformer error: value is not a string.")
 	}

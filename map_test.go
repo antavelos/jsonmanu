@@ -7,15 +7,15 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-type SplitTransformerTestCase struct {
-	transformer              SplitTransformer
+type TransformerTestCase struct {
+	transformer              Transformer
 	value                    any
 	expectedTransformedValue any
 	expectedErrorMessage     string
 }
 
 func TestSplitTransformer(t *testing.T) {
-	cases := []SplitTransformerTestCase{
+	cases := []TransformerTestCase{
 		{
 			transformer:              SplitTransformer{Delim: ",", Index: -1},
 			value:                    "tok1,tok2,tok3",
@@ -68,15 +68,8 @@ func TestSplitTransformer(t *testing.T) {
 	}
 }
 
-type ReplaceTransformerTestCase struct {
-	transformer              ReplaceTransformer
-	value                    any
-	expectedTransformedValue any
-	expectedErrorMessage     string
-}
-
 func TestReplaceSplitTransformer(t *testing.T) {
-	cases := []ReplaceTransformerTestCase{
+	cases := []TransformerTestCase{
 		{
 			transformer:              ReplaceTransformer{OldVal: "lorem", NewVal: "ipsum"},
 			value:                    "lorem ipsum lorem ipsum",
@@ -111,15 +104,8 @@ func TestReplaceSplitTransformer(t *testing.T) {
 	}
 }
 
-type JoinTransformerTestCase struct {
-	transformer              JoinTransformer
-	value                    any
-	expectedTransformedValue string
-	expectedErrorMessage     string
-}
-
 func TestJoinSplitTransformer(t *testing.T) {
-	cases := []JoinTransformerTestCase{
+	cases := []TransformerTestCase{
 		{
 			transformer:              JoinTransformer{Delim: ","},
 			value:                    []string{"1", "2", "3"},
@@ -334,6 +320,47 @@ func TestMap(t *testing.T) {
 			expectedErrorMessages: []string{
 				"mapper[0]: Error while putting value in destination: DataValidationError: Data is not a map: '<nil>'",
 				"mapper[1]: Error while putting value in destination: DataValidationError: Data is not a map: '<nil>'"},
+		},
+		{
+			src: map[string]any{
+				"area": map[string]any{
+					"coordinates": "45.4422445 4.3222345",
+					"name":        "old name",
+					"acronym":     []string{"n", "a", "m", "e"},
+				},
+			},
+			dst: map[string]any{},
+			mappers: []Mapper{
+				Mapper{
+					SrcNode:     JsonNode{Path: "$.area.coordinates", Type: String},
+					DstNode:     JsonNode{Path: "$.area.latitude", Type: Array},
+					Transformer: SplitTransformer{Delim: " ", Index: 0},
+				},
+				Mapper{
+					SrcNode:     JsonNode{Path: "$.area.coordinates", Type: String},
+					DstNode:     JsonNode{Path: "$.area.longitude", Type: String},
+					Transformer: SplitTransformer{Delim: " ", Index: 1},
+				},
+				Mapper{
+					SrcNode:     JsonNode{Path: "$.area.name", Type: String},
+					DstNode:     JsonNode{Path: "$.area.name", Type: String},
+					Transformer: ReplaceTransformer{OldVal: "old", NewVal: "new"},
+				},
+				Mapper{
+					SrcNode:     JsonNode{Path: "$.area.acronym", Type: Array},
+					DstNode:     JsonNode{Path: "$.area.name_from_acronym", Type: String},
+					Transformer: JoinTransformer{Delim: ""},
+				},
+			},
+			expectedDst: map[string]any{
+				"area": map[string]any{
+					"latitude":          "45.4422445",
+					"longitude":         "4.3222345",
+					"name":              "new name",
+					"name_from_acronym": "name",
+				},
+			},
+			expectedErrorMessages: []string{},
 		},
 	}
 
