@@ -2,6 +2,7 @@ package jsonmanu
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -60,6 +61,37 @@ func (t ReplaceTransformer) Transform(value any) (any, error) {
 	}
 
 	return strings.Replace(value.(string), t.OldVal, t.NewVal, -1), nil
+}
+
+type StringMatchTransformer struct {
+	Regex string
+}
+
+func (t StringMatchTransformer) Transform(value any) (any, error) {
+	re := regexp.MustCompile(t.Regex)
+	result := re.FindString(value.(string))
+
+	return result, nil
+}
+
+type SubStrTransformer struct {
+	Start int
+	End   int
+}
+
+func (t SubStrTransformer) Transform(value any) (result any, err error) {
+	if t.Start < 0 {
+		return nil, fmt.Errorf("Start index out of bound.")
+	}
+
+	if t.End >= len(value.(string)) {
+		return nil, fmt.Errorf("End index out of bound.")
+	}
+
+	if t.End == 0 {
+		t.End = len(value.(string))
+	}
+	return value.(string)[t.Start:t.End], nil
 }
 
 const (

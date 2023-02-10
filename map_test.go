@@ -170,6 +170,96 @@ func TestJoinSplitTransformer(t *testing.T) {
 	}
 }
 
+func TestStringMatchSplitTransformer(t *testing.T) {
+	cases := []TransformerTestCase{
+		{
+			transformer:              StringMatchTransformer{Regex: `abc`},
+			value:                    "123abcdefg",
+			expectedTransformedValue: "abc",
+			expectedErrorMessage:     "",
+		},
+		{
+			transformer:              StringMatchTransformer{Regex: `$abc`},
+			value:                    "123abcdefg",
+			expectedTransformedValue: "",
+			expectedErrorMessage:     "",
+		},
+		{
+			transformer:              StringMatchTransformer{Regex: `^\d*`},
+			value:                    "123abcdefg",
+			expectedTransformedValue: "123",
+			expectedErrorMessage:     "",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(fmt.Sprintf("StringMatchTransformer.transform(%v)=%v", tc.value, tc.expectedTransformedValue), func(t *testing.T) {
+			transformedValue, err := tc.transformer.Transform(tc.value)
+
+			if err == nil && len(tc.expectedErrorMessage) > 0 {
+				t.Errorf("Expected error message '%#v', but got '%#v'", tc.expectedErrorMessage, err)
+			}
+			if err != nil && err.Error() != tc.expectedErrorMessage {
+				t.Errorf("Expected error message '%#v', but got '%#v'", tc.expectedErrorMessage, err.Error())
+			}
+			if !cmp.Equal(tc.expectedTransformedValue, transformedValue) {
+				t.Errorf("Expected '%#v', but got '%#v'", tc.expectedTransformedValue, transformedValue)
+			}
+		})
+	}
+}
+
+func TestSubStrSplitTransformer(t *testing.T) {
+	cases := []TransformerTestCase{
+		{
+			transformer:              SubStrTransformer{Start: -1},
+			value:                    "123abcdefg",
+			expectedTransformedValue: nil,
+			expectedErrorMessage:     "Start index out of bound.",
+		},
+		{
+			transformer:              SubStrTransformer{End: 100},
+			value:                    "123abcdefg",
+			expectedTransformedValue: nil,
+			expectedErrorMessage:     "End index out of bound.",
+		},
+		{
+			transformer:              SubStrTransformer{Start: 0, End: 3},
+			value:                    "123abcdefg",
+			expectedTransformedValue: "123",
+			expectedErrorMessage:     "",
+		},
+		{
+			transformer:              SubStrTransformer{Start: 3},
+			value:                    "123abcdefg",
+			expectedTransformedValue: "abcdefg",
+			expectedErrorMessage:     "",
+		},
+		{
+			transformer:              SubStrTransformer{End: 3},
+			value:                    "123abcdefg",
+			expectedTransformedValue: "123",
+			expectedErrorMessage:     "",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(fmt.Sprintf("StringMatchTransformer.transform(%v)=%v", tc.value, tc.expectedTransformedValue), func(t *testing.T) {
+			transformedValue, err := tc.transformer.Transform(tc.value)
+
+			if err == nil && len(tc.expectedErrorMessage) > 0 {
+				t.Errorf("Expected error message '%#v', but got '%#v'", tc.expectedErrorMessage, err)
+			}
+			if err != nil && err.Error() != tc.expectedErrorMessage {
+				t.Errorf("Expected error message '%#v', but got '%#v'", tc.expectedErrorMessage, err.Error())
+			}
+			if !cmp.Equal(tc.expectedTransformedValue, transformedValue) {
+				t.Errorf("Expected '%#v', but got '%#v'", tc.expectedTransformedValue, transformedValue)
+			}
+		})
+	}
+}
+
 type MapTestCase struct {
 	src                   any
 	dst                   any
