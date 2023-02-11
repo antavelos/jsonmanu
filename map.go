@@ -109,9 +109,9 @@ type JsonNode struct {
 }
 
 type Mapper struct {
-	SrcNode     JsonNode
-	DstNode     JsonNode
-	Transformer Transformer
+	SrcNode      JsonNode
+	DstNode      JsonNode
+	Transformers []Transformer
 }
 
 func handleMapper(src any, dst any, mapper Mapper) error {
@@ -125,10 +125,10 @@ func handleMapper(src any, dst any, mapper Mapper) error {
 		return fmt.Errorf("Error while getting value from source: %v", err)
 	}
 
-	if mapper.Transformer != nil {
-		srcValue, err = mapper.Transformer.Transform(srcValue)
+	for i, transformer := range mapper.Transformers {
+		srcValue, err = transformer.Transform(srcValue)
 		if err != nil {
-			return fmt.Errorf("Error while transforming value: %v", err)
+			return fmt.Errorf("Transformer[%v]: Error while transforming value: %v", i, err)
 		}
 	}
 

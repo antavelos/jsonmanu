@@ -422,24 +422,24 @@ func TestMap(t *testing.T) {
 			dst: map[string]any{},
 			mappers: []Mapper{
 				Mapper{
-					SrcNode:     JsonNode{Path: "$.area.coordinates", Type: String},
-					DstNode:     JsonNode{Path: "$.area.latitude", Type: Array},
-					Transformer: SplitTransformer{Delim: " ", Index: 0},
+					SrcNode:      JsonNode{Path: "$.area.coordinates", Type: String},
+					DstNode:      JsonNode{Path: "$.area.latitude", Type: Array},
+					Transformers: []Transformer{SplitTransformer{Delim: " ", Index: 0}},
 				},
 				Mapper{
-					SrcNode:     JsonNode{Path: "$.area.coordinates", Type: String},
-					DstNode:     JsonNode{Path: "$.area.longitude", Type: String},
-					Transformer: SplitTransformer{Delim: " ", Index: 1},
+					SrcNode:      JsonNode{Path: "$.area.coordinates", Type: String},
+					DstNode:      JsonNode{Path: "$.area.longitude", Type: String},
+					Transformers: []Transformer{SplitTransformer{Delim: " ", Index: 1}},
 				},
 				Mapper{
-					SrcNode:     JsonNode{Path: "$.area.name", Type: String},
-					DstNode:     JsonNode{Path: "$.area.name", Type: String},
-					Transformer: ReplaceTransformer{OldVal: "old", NewVal: "new"},
+					SrcNode:      JsonNode{Path: "$.area.name", Type: String},
+					DstNode:      JsonNode{Path: "$.area.name", Type: String},
+					Transformers: []Transformer{ReplaceTransformer{OldVal: "old", NewVal: "new"}},
 				},
 				Mapper{
-					SrcNode:     JsonNode{Path: "$.area.acronym", Type: Array},
-					DstNode:     JsonNode{Path: "$.area.name_from_acronym", Type: String},
-					Transformer: JoinTransformer{Delim: ""},
+					SrcNode:      JsonNode{Path: "$.area.acronym", Type: Array},
+					DstNode:      JsonNode{Path: "$.area.name_from_acronym", Type: String},
+					Transformers: []Transformer{JoinTransformer{Delim: ""}},
 				},
 			},
 			expectedDst: map[string]any{
