@@ -244,7 +244,52 @@ func TestSubStrSplitTransformer(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		t.Run(fmt.Sprintf("StringMatchTransformer.transform(%v)=%v", tc.value, tc.expectedTransformedValue), func(t *testing.T) {
+		t.Run(fmt.Sprintf("SubStrMatchTransformer.transform(%v)=%v", tc.value, tc.expectedTransformedValue), func(t *testing.T) {
+			transformedValue, err := tc.transformer.Transform(tc.value)
+
+			if err == nil && len(tc.expectedErrorMessage) > 0 {
+				t.Errorf("Expected error message '%#v', but got '%#v'", tc.expectedErrorMessage, err)
+			}
+			if err != nil && err.Error() != tc.expectedErrorMessage {
+				t.Errorf("Expected error message '%#v', but got '%#v'", tc.expectedErrorMessage, err.Error())
+			}
+			if !cmp.Equal(tc.expectedTransformedValue, transformedValue) {
+				t.Errorf("Expected '%#v', but got '%#v'", tc.expectedTransformedValue, transformedValue)
+			}
+		})
+	}
+}
+
+func TestNumberTransformer(t *testing.T) {
+	cases := []TransformerTestCase{
+		{
+			transformer:              NumberTransformer{},
+			value:                    1,
+			expectedTransformedValue: nil,
+			expectedErrorMessage:     "Value should be a string.",
+		},
+		{
+			transformer:              NumberTransformer{},
+			value:                    "invalid",
+			expectedTransformedValue: nil,
+			expectedErrorMessage:     "Couldn't convert value to number.",
+		},
+		{
+			transformer:              NumberTransformer{},
+			value:                    "123",
+			expectedTransformedValue: 123.0,
+			expectedErrorMessage:     "",
+		},
+		{
+			transformer:              NumberTransformer{},
+			value:                    "123.456",
+			expectedTransformedValue: 123.456,
+			expectedErrorMessage:     "",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(fmt.Sprintf("NumberTransformer.transform(%v)=%v", tc.value, tc.expectedTransformedValue), func(t *testing.T) {
 			transformedValue, err := tc.transformer.Transform(tc.value)
 
 			if err == nil && len(tc.expectedErrorMessage) > 0 {
@@ -408,8 +453,8 @@ func TestMap(t *testing.T) {
 			},
 			expectedDst: nil,
 			expectedErrorMessages: []string{
-				"mapper[0]: Error while putting value in destination: DataValidationError: Data is not a map: '<nil>'",
-				"mapper[1]: Error while putting value in destination: DataValidationError: Data is not a map: '<nil>'"},
+				"Mapper[0]: Error while putting value in destination: DataValidationError: Data is not a map: '<nil>'",
+				"Mapper[1]: Error while putting value in destination: DataValidationError: Data is not a map: '<nil>'"},
 		},
 		{
 			src: map[string]any{
@@ -452,6 +497,40 @@ func TestMap(t *testing.T) {
 			},
 			expectedErrorMessages: []string{},
 		},
+		{
+			src: map[string]any{
+				"books": []any{
+					map[string]any{
+						"title":   "Title 1",
+						"summary": "lorem ipsum 23/12/1889",
+					},
+					map[string]any{
+						"title":   "Title 2",
+						"summary": "lorem ipsum 15/03/1733",
+					},
+					map[string]any{
+						"title":   "Title 3",
+						"summary": "lorem ipsum 12/01/1901",
+					},
+				},
+			},
+			dst: map[string]any{},
+			mappers: []Mapper{
+				Mapper{
+					SrcNode: JsonNode{Path: "$.books.summary", Type: String},
+					DstNode: JsonNode{Path: "$.dates", Type: Array},
+					Transformers: []Transformer{
+						StringMatchTransformer{Regex: `\d{2}/\d{2}/\d{4}`},
+						SplitTransformer{Delim: "/", Index: 2},
+						NumberTransformer{},
+					},
+				},
+			},
+			expectedDst: map[string]any{
+				"dates": []any{1889.0, 1733.0, 1901.0},
+			},
+			expectedErrorMessages: []string{},
+		},
 	}
 
 	for i, tc := range cases {
@@ -459,7 +538,10 @@ func TestMap(t *testing.T) {
 			errors := Map(tc.src, tc.dst, tc.mappers)
 
 			for i, err := range errors {
-				if (err == nil && len(tc.expectedErrorMessages[i]) > 0) || (err != nil && err.Error() != tc.expectedErrorMessages[i]) {
+				if err == nil && len(tc.expectedErrorMessages[i]) > 0 {
+					t.Errorf("Expected error message '%#v', but got '%#v'", tc.expectedErrorMessages[i], err)
+				}
+				if err != nil && err.Error() != tc.expectedErrorMessages[i] {
 					t.Errorf("Expected error message '%#v', but got '%#v'", tc.expectedErrorMessages[i], err.Error())
 				}
 			}

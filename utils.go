@@ -24,6 +24,14 @@ func isString(t any) bool {
 	return reflect.ValueOf(t).Kind() == reflect.String
 }
 
+func isNumber(t any) bool {
+	return reflect.ValueOf(t).Kind() == reflect.Float64
+}
+
+func isBoolean(t any) bool {
+	return reflect.ValueOf(t).Kind() == reflect.Bool
+}
+
 // flattenArray flattens any array of arrays.
 // Example: flattenArray([1, 2, 3, [4, 5, [6, 7, [8, 9]]]]) = [1, 2, 3, 4, 5, 6, 7, 8, 9].
 func flattenArray(arr []any) (result []any) {

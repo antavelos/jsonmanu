@@ -1,8 +1,10 @@
 package jsonmanu
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -17,13 +19,13 @@ type SplitTransformer struct {
 
 func (t SplitTransformer) Transform(value any) (any, error) {
 	if !isString(value) {
-		return nil, fmt.Errorf("SplitTransformer error: value is not a string.")
+		return nil, errors.New("SplitTransformer error: value is not a string.")
 	}
 
 	split := strings.Split(value.(string), t.Delim)
 
 	if t.Index >= len(split) {
-		return nil, fmt.Errorf("SplitTransformer error: Index out of bounds.")
+		return nil, errors.New("SplitTransformer error: Index out of bounds.")
 	}
 
 	if t.Index == -1 {
@@ -39,7 +41,7 @@ type JoinTransformer struct {
 
 func (t JoinTransformer) Transform(value any) (any, error) {
 	if !isSlice(value) {
-		return "", fmt.Errorf("JoinTransformer error: value is not an array.")
+		return "", errors.New("JoinTransformer error: value is not an array.")
 	}
 
 	var strSlice []string
@@ -57,7 +59,7 @@ type ReplaceTransformer struct {
 
 func (t ReplaceTransformer) Transform(value any) (any, error) {
 	if !isString(value) {
-		return "", fmt.Errorf("ReplaceTransformer error: value is not a string.")
+		return "", errors.New("ReplaceTransformer error: value is not a string.")
 	}
 
 	return strings.Replace(value.(string), t.OldVal, t.NewVal, -1), nil
@@ -79,13 +81,13 @@ type SubStrTransformer struct {
 	End   int
 }
 
-func (t SubStrTransformer) Transform(value any) (result any, err error) {
+func (t SubStrTransformer) Transform(value any) (any, error) {
 	if t.Start < 0 {
-		return nil, fmt.Errorf("Start index out of bound.")
+		return nil, errors.New("Start index out of bound.")
 	}
 
 	if t.End >= len(value.(string)) {
-		return nil, fmt.Errorf("End index out of bound.")
+		return nil, errors.New("End index out of bound.")
 	}
 
 	if t.End == 0 {
@@ -94,8 +96,25 @@ func (t SubStrTransformer) Transform(value any) (result any, err error) {
 	return value.(string)[t.Start:t.End], nil
 }
 
+type NumberTransformer struct{}
+
+func (t NumberTransformer) Transform(value any) (any, error) {
+	if !isString(value) {
+		return nil, errors.New("Value should be a string.")
+	}
+
+	fv, err := strconv.ParseFloat(value.(string), 1)
+	if err != nil {
+		return nil, errors.New("Couldn't convert value to number.")
+	}
+
+	return fv, nil
+}
+
+type DataType int
+
 const (
-	Object int = iota
+	Object DataType = iota
 	Array
 	String
 	Number
@@ -105,7 +124,7 @@ const (
 
 type JsonNode struct {
 	Path string
-	Type int
+	Type DataType
 }
 
 type Mapper struct {
@@ -126,9 +145,22 @@ func handleMapper(src any, dst any, mapper Mapper) error {
 	}
 
 	for i, transformer := range mapper.Transformers {
-		srcValue, err = transformer.Transform(srcValue)
-		if err != nil {
-			return fmt.Errorf("Transformer[%v]: Error while transforming value: %v", i, err)
+		if isSlice(srcValue) && mapper.DstNode.Type == Array {
+			var transArray []any
+			for item := range iterAny(srcValue, nil) {
+				transItem, err := transformer.Transform(item)
+				if err != nil {
+					return fmt.Errorf("Transformer[%v]: Error while transforming value: %v", i, err)
+				}
+				transArray = append(transArray, transItem)
+			}
+			srcValue = transArray
+		} else {
+
+			srcValue, err = transformer.Transform(srcValue)
+			if err != nil {
+				return fmt.Errorf("Transformer[%v]: Error while transforming value: %v", i, err)
+			}
 		}
 	}
 
@@ -142,7 +174,7 @@ func handleMapper(src any, dst any, mapper Mapper) error {
 
 func validateMapper(mapper Mapper) error {
 	if pathHasReccursiveDescent(mapper.DstNode.Path) {
-		return fmt.Errorf("reccursive descent not allowed in destination path")
+		return fmt.Errorf("Reccursive descent not allowed in destination path")
 	}
 
 	return nil
@@ -152,7 +184,7 @@ func Map(src any, dst any, mappers []Mapper) (errors []error) {
 	for i, mapper := range mappers {
 		err := handleMapper(src, dst, mapper)
 		if err != nil {
-			errors = append(errors, fmt.Errorf("mapper[%v]: %s", i, err.Error()))
+			errors = append(errors, fmt.Errorf("Mapper[%v]: %s", i, err.Error()))
 		}
 	}
 
