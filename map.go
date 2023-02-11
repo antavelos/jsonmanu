@@ -131,8 +131,25 @@ type Mapper struct {
 	SrcNode      JsonNode
 	DstNode      JsonNode
 	Transformers []Transformer
+	asArray      bool
 }
 
+// handleSlideTransformation applies the transformation on each element of the slice
+func handleSlideTransformation(value any, transformer Transformer) (any, error) {
+	var transArray []any
+	for item := range iterAny(value, nil) {
+		transItem, err := transformer.Transform(item)
+		if err != nil {
+			return value, err
+		}
+		transArray = append(transArray, transItem)
+	}
+	value = transArray
+
+	return value, nil
+}
+
+// handleMapper handles the cycle of a mapping of a src value to a dest based on the mapper conf
 func handleMapper(src any, dst any, mapper Mapper) error {
 	err := validateMapper(mapper)
 	if err != nil {
@@ -145,22 +162,18 @@ func handleMapper(src any, dst any, mapper Mapper) error {
 	}
 
 	for i, transformer := range mapper.Transformers {
-		if isSlice(srcValue) && mapper.DstNode.Type == Array {
-			var transArray []any
-			for item := range iterAny(srcValue, nil) {
-				transItem, err := transformer.Transform(item)
-				if err != nil {
-					return fmt.Errorf("Transformer[%v]: Error while transforming value: %v", i, err)
-				}
-				transArray = append(transArray, transItem)
+		if isSlice(srcValue) {
+			if mapper.asArray {
+				srcValue, err = transformer.Transform(srcValue)
+			} else {
+				srcValue, err = handleSlideTransformation(srcValue, transformer)
 			}
-			srcValue = transArray
 		} else {
-
 			srcValue, err = transformer.Transform(srcValue)
-			if err != nil {
-				return fmt.Errorf("Transformer[%v]: Error while transforming value: %v", i, err)
-			}
+		}
+
+		if err != nil {
+			return fmt.Errorf("Transformer[%v]: Error while transforming value: %v", i, err)
 		}
 	}
 

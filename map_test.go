@@ -485,6 +485,7 @@ func TestMap(t *testing.T) {
 					SrcNode:      JsonNode{Path: "$.area.acronym", Type: Array},
 					DstNode:      JsonNode{Path: "$.area.name_from_acronym", Type: String},
 					Transformers: []Transformer{JoinTransformer{Delim: ""}},
+					asArray:      true,
 				},
 			},
 			expectedDst: map[string]any{
@@ -536,6 +537,9 @@ func TestMap(t *testing.T) {
 	for i, tc := range cases {
 		t.Run(fmt.Sprintf("[%v] Map(%v, %v, %v)=%v", i, tc.src, tc.dst, tc.mappers, tc.expectedErrorMessages), func(t *testing.T) {
 			errors := Map(tc.src, tc.dst, tc.mappers)
+			if len(errors) != len(tc.expectedErrorMessages) {
+				t.Errorf("Expected error messages '%#v', but got '%#v'", tc.expectedErrorMessages, errors)
+			}
 
 			for i, err := range errors {
 				if err == nil && len(tc.expectedErrorMessages[i]) > 0 {
