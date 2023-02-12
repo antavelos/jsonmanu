@@ -327,8 +327,8 @@ func TestMap(t *testing.T) {
 			dst: map[string]any{"authors": nil},
 			mappers: []Mapper{
 				Mapper{
-					SrcNode: JsonNode{Path: "$.library.books.author", Type: String},
-					DstNode: JsonNode{Path: "$.authors", Type: Array},
+					SrcJsonPath: "$.library.books.author",
+					DstJsonPath: "$.authors",
 				},
 			},
 			expectedDst:           map[string]any{"authors": []any{"Nietzsche", "Stirner"}},
@@ -346,8 +346,8 @@ func TestMap(t *testing.T) {
 			dst: map[string]any{},
 			mappers: []Mapper{
 				Mapper{
-					SrcNode: JsonNode{Path: "$.library.books.author", Type: String},
-					DstNode: JsonNode{Path: "$.authors", Type: Array},
+					SrcJsonPath: "$.library.books.author",
+					DstJsonPath: "$.authors",
 				},
 			},
 			expectedDst:           map[string]any{"authors": []any{"Nietzsche", "Stirner"}},
@@ -365,8 +365,8 @@ func TestMap(t *testing.T) {
 			dst: map[string]any{"authors": []int{1, 2, 3}},
 			mappers: []Mapper{
 				Mapper{
-					SrcNode: JsonNode{Path: "$.library.books.author", Type: String},
-					DstNode: JsonNode{Path: "$.authors", Type: Array},
+					SrcJsonPath: "$.library.books.author",
+					DstJsonPath: "$.authors",
 				},
 			},
 			expectedDst:           map[string]any{"authors": []any{"Nietzsche", "Stirner"}},
@@ -384,8 +384,8 @@ func TestMap(t *testing.T) {
 			dst: map[string]any{"authors": nil},
 			mappers: []Mapper{
 				Mapper{
-					SrcNode: JsonNode{Path: "$.library.books.author", Type: String},
-					DstNode: JsonNode{Path: "$.library.authors", Type: Array},
+					SrcJsonPath: "$.library.books.author",
+					DstJsonPath: "$.library.authors",
 				},
 			},
 			expectedDst:           map[string]any{"authors": nil, "library": map[string]any{"authors": []any{"Nietzsche", "Stirner"}}},
@@ -407,12 +407,12 @@ func TestMap(t *testing.T) {
 			dst: make(map[string]any),
 			mappers: []Mapper{
 				Mapper{
-					SrcNode: JsonNode{Path: "$.library.books.author", Type: String},
-					DstNode: JsonNode{Path: "$.library.authors", Type: Array},
+					SrcJsonPath: "$.library.books.author",
+					DstJsonPath: "$.library.authors",
 				},
 				Mapper{
-					SrcNode: JsonNode{Path: "$.library.categories.name", Type: String},
-					DstNode: JsonNode{Path: "$.library.categories", Type: Array},
+					SrcJsonPath: "$.library.categories.name",
+					DstJsonPath: "$.library.categories",
 				},
 			},
 			expectedDst: map[string]any{
@@ -443,12 +443,12 @@ func TestMap(t *testing.T) {
 			dst: nil,
 			mappers: []Mapper{
 				Mapper{
-					SrcNode: JsonNode{Path: "$.library.books.author", Type: String},
-					DstNode: JsonNode{Path: "$.library.authors", Type: Array},
+					SrcJsonPath: "$.library.books.author",
+					DstJsonPath: "$.library.authors",
 				},
 				Mapper{
-					SrcNode: JsonNode{Path: "$.library.categories.name", Type: String},
-					DstNode: JsonNode{Path: "$.library.categories", Type: Array},
+					SrcJsonPath: "$.library.categories.name",
+					DstJsonPath: "$.library.categories",
 				},
 			},
 			expectedDst: nil,
@@ -467,25 +467,24 @@ func TestMap(t *testing.T) {
 			dst: map[string]any{},
 			mappers: []Mapper{
 				Mapper{
-					SrcNode:      JsonNode{Path: "$.area.coordinates", Type: String},
-					DstNode:      JsonNode{Path: "$.area.latitude", Type: Array},
-					Transformers: []Transformer{SplitTransformer{Delim: " ", Index: 0}},
+					SrcJsonPath:     "$.area.coordinates",
+					DstJsonPath:     "$.area.latitude",
+					Transformations: []Transformation{{Trsnfmr: SplitTransformer{Delim: " ", Index: 0}}},
 				},
 				Mapper{
-					SrcNode:      JsonNode{Path: "$.area.coordinates", Type: String},
-					DstNode:      JsonNode{Path: "$.area.longitude", Type: String},
-					Transformers: []Transformer{SplitTransformer{Delim: " ", Index: 1}},
+					SrcJsonPath:     "$.area.coordinates",
+					DstJsonPath:     "$.area.longitude",
+					Transformations: []Transformation{{Trsnfmr: SplitTransformer{Delim: " ", Index: 1}}},
 				},
 				Mapper{
-					SrcNode:      JsonNode{Path: "$.area.name", Type: String},
-					DstNode:      JsonNode{Path: "$.area.name", Type: String},
-					Transformers: []Transformer{ReplaceTransformer{OldVal: "old", NewVal: "new"}},
+					SrcJsonPath:     "$.area.name",
+					DstJsonPath:     "$.area.name",
+					Transformations: []Transformation{{Trsnfmr: ReplaceTransformer{OldVal: "old", NewVal: "new"}}},
 				},
 				Mapper{
-					SrcNode:      JsonNode{Path: "$.area.acronym", Type: Array},
-					DstNode:      JsonNode{Path: "$.area.name_from_acronym", Type: String},
-					Transformers: []Transformer{JoinTransformer{Delim: ""}},
-					asArray:      true,
+					SrcJsonPath:     "$.area.acronym",
+					DstJsonPath:     "$.area.name_from_acronym",
+					Transformations: []Transformation{{Trsnfmr: JoinTransformer{Delim: ""}, AsArray: true}},
 				},
 			},
 			expectedDst: map[string]any{
@@ -518,18 +517,40 @@ func TestMap(t *testing.T) {
 			dst: map[string]any{},
 			mappers: []Mapper{
 				Mapper{
-					SrcNode: JsonNode{Path: "$.books.summary", Type: String},
-					DstNode: JsonNode{Path: "$.dates", Type: Array},
-					Transformers: []Transformer{
-						StringMatchTransformer{Regex: `\d{2}/\d{2}/\d{4}`},
-						SplitTransformer{Delim: "/", Index: 2},
-						NumberTransformer{},
+					SrcJsonPath: "$.books.summary",
+					DstJsonPath: "$.dates",
+					Transformations: []Transformation{
+						{Trsnfmr: StringMatchTransformer{Regex: `\d{2}/\d{2}/\d{4}`}},
+						{Trsnfmr: SplitTransformer{Delim: "/", Index: 2}},
+						{Trsnfmr: NumberTransformer{}},
 					},
 				},
 			},
 			expectedDst: map[string]any{
 				"dates": []any{1889.0, 1733.0, 1901.0},
 			},
+			expectedErrorMessages: []string{},
+		},
+		{
+			src: map[string]any{
+				"library": map[string]any{
+					"books": []any{
+						map[string]any{"author": "Nietzsche"},
+						map[string]any{"author": "Stirner"},
+					},
+				},
+			},
+			dst: map[string]any{"authors": nil},
+			mappers: []Mapper{
+				Mapper{
+					SrcJsonPath: "$.library.books.author",
+					DstJsonPath: "$.authors",
+					Transformations: []Transformation{
+						Transformation{Trsnfmr: JoinTransformer{Delim: ", "}, AsArray: true},
+					},
+				},
+			},
+			expectedDst:           map[string]any{"authors": "Nietzsche, Stirner"},
 			expectedErrorMessages: []string{},
 		},
 	}

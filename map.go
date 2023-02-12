@@ -111,38 +111,42 @@ func (t NumberTransformer) Transform(value any) (any, error) {
 	return fv, nil
 }
 
-type DataType int
+type Transformation struct {
+	// Transformer applies a predefined logic on a specific value
+	Trsnfmr Transformer
 
-const (
-	Object DataType = iota
-	Array
-	String
-	Number
-	Boolean
-	Null
-)
-
-type JsonNode struct {
-	Path string
-	Type DataType
+	// AsArray determines whether a retrieved source array value will be retrieved as a whole array or not.
+	// An array retrieved value is such either because a grouping occured due to a parent array higher in the source structure
+	// or because it is actually an array in the original source. By default the transformation will apply to each element of
+	// the array unless this flag is set as true.
+	AsArray bool
 }
 
 type Mapper struct {
-	SrcNode      JsonNode
-	DstNode      JsonNode
-	Transformers []Transformer
-	asArray      bool
+	// SrcJsonPath is the JsonPath of the source data where data will be retrieved from
+	SrcJsonPath string
+
+	// DstJsonPath is the JsonPath of the destination data where data will be put in
+	DstJsonPath string
+
+	// Transformations enable optional functionality to be applied on the retrieved value before it's put in the destination data.
+	// The transformations will be applied in a chain mode according to their order
+	Transformations []Transformation
 }
 
 // handleSlideTransformation applies the transformation on each element of the slice
 func handleSlideTransformation(value any, transformer Transformer) (any, error) {
 	var transArray []any
+	i := 0
 	for item := range iterAny(value, nil) {
 		transItem, err := transformer.Transform(item)
 		if err != nil {
-			return value, err
+			return value, fmt.Errorf(
+				"Array[%v]: Cannot apply transformation: %v. Possible solution: enable the `AsArray` option of the transformation if not done yet.", i, err,
+			)
 		}
 		transArray = append(transArray, transItem)
+		i++
 	}
 	value = transArray
 
@@ -156,20 +160,20 @@ func handleMapper(src any, dst any, mapper Mapper) error {
 		return fmt.Errorf("Validation error: %v", err)
 	}
 
-	srcValue, err := Get(src, mapper.SrcNode.Path)
+	srcValue, err := Get(src, mapper.SrcJsonPath)
 	if err != nil {
 		return fmt.Errorf("Error while getting value from source: %v", err)
 	}
 
-	for i, transformer := range mapper.Transformers {
+	for i, transformation := range mapper.Transformations {
 		if isSlice(srcValue) {
-			if mapper.asArray {
-				srcValue, err = transformer.Transform(srcValue)
+			if transformation.AsArray {
+				srcValue, err = transformation.Trsnfmr.Transform(srcValue)
 			} else {
-				srcValue, err = handleSlideTransformation(srcValue, transformer)
+				srcValue, err = handleSlideTransformation(srcValue, transformation.Trsnfmr)
 			}
 		} else {
-			srcValue, err = transformer.Transform(srcValue)
+			srcValue, err = transformation.Trsnfmr.Transform(srcValue)
 		}
 
 		if err != nil {
@@ -177,7 +181,7 @@ func handleMapper(src any, dst any, mapper Mapper) error {
 		}
 	}
 
-	err = Put(dst, mapper.DstNode.Path, srcValue)
+	err = Put(dst, mapper.DstJsonPath, srcValue)
 	if err != nil {
 		return fmt.Errorf("Error while putting value in destination: %v", err)
 	}
@@ -186,7 +190,7 @@ func handleMapper(src any, dst any, mapper Mapper) error {
 }
 
 func validateMapper(mapper Mapper) error {
-	if pathHasReccursiveDescent(mapper.DstNode.Path) {
+	if pathHasReccursiveDescent(mapper.DstJsonPath) {
 		return fmt.Errorf("Reccursive descent not allowed in destination path")
 	}
 
