@@ -83,14 +83,14 @@ func TestNnodeFromJsonPathSubNode(t *testing.T) {
 
 type NodeDataAccessorGetTestCase struct {
 	manager              nodeDataAccessor
-	sourceData           any
+	sourceData           map[string]any
 	expectedData         any
 	expectedErrorMessage string
 }
 
 type NodeDataAccessorPutTestCase struct {
 	manager              nodeDataAccessor
-	sourceData           any
+	sourceData           map[string]any
 	value                any
 	expectedErrorMessage string
 	expectedUpdatedData  any
@@ -109,12 +109,6 @@ func TestNodeGet(t *testing.T) {
 			sourceData:           map[string]any{"book": []any{1, 2, 3}},
 			expectedData:         nil,
 			expectedErrorMessage: "DataValidationError: Source key not found: 'books'",
-		},
-		{
-			manager:              node{"books"},
-			sourceData:           []any{1, 2, 3},
-			expectedData:         nil,
-			expectedErrorMessage: "DataValidationError: Data is not a map: '[]interface {}{1, 2, 3}'",
 		},
 	}
 
@@ -154,20 +148,6 @@ func TestNodePut(t *testing.T) {
 			expectedErrorMessage: "",
 			expectedUpdatedData:  map[string]any{"numbers": []any{2.3, 4.5, 6.7}},
 		},
-		{
-			manager:              node{"numbers"},
-			sourceData:           []any{1, 2, 3},
-			value:                []any{2.3, 4.5, 6.7},
-			expectedErrorMessage: "DataValidationError: Data is not a map: '[]interface {}{1, 2, 3}'",
-			expectedUpdatedData:  []any{1, 2, 3},
-		},
-		{
-			manager:              node{"numbers"},
-			sourceData:           []any{1, 2, 3},
-			value:                100,
-			expectedErrorMessage: "DataValidationError: Data is not a map: '[]interface {}{1, 2, 3}'",
-			expectedUpdatedData:  []any{1, 2, 3},
-		},
 	}
 
 	for _, tc := range testCases {
@@ -185,15 +165,6 @@ func TestNodePut(t *testing.T) {
 
 func TestArrayIndexedNodeGet(t *testing.T) {
 	testCases := []NodeDataAccessorGetTestCase{
-		{
-			manager: arrayIndexedNode{
-				node:    node{name: "books"},
-				indices: []int{0, 2},
-			},
-			sourceData:           []any{1, 2, 3},
-			expectedData:         nil,
-			expectedErrorMessage: "DataValidationError: Data is not a map: '[]interface {}{1, 2, 3}'",
-		},
 		{
 			manager: arrayIndexedNode{
 				node:    node{name: "books"},
@@ -286,16 +257,6 @@ func TestArrayIndexedNodePut(t *testing.T) {
 			value:                "hundred",
 			expectedErrorMessage: "",
 			expectedUpdatedData:  map[string]any{"books": []any{"hundred", 2, "hundred"}},
-		},
-		{
-			manager: arrayIndexedNode{
-				node:    node{name: "books"},
-				indices: []int{0, 2},
-			},
-			sourceData:           []any{1, 2, 3},
-			value:                100,
-			expectedErrorMessage: "DataValidationError: Data is not a map: '[]interface {}{1, 2, 3}'",
-			expectedUpdatedData:  []any{1, 2, 3},
 		},
 		{
 			manager: arrayIndexedNode{
@@ -457,17 +418,6 @@ func TestArraySlicedNodePut(t *testing.T) {
 			value:                100,
 			expectedErrorMessage: "",
 			expectedUpdatedData:  map[string]any{"books": []any{1, 2, 3}},
-		},
-		{
-			manager: arraySlicedNode{
-				node:  node{name: "books"},
-				start: 1,
-				end:   2,
-			},
-			sourceData:           []any{1, 2, 3},
-			value:                100,
-			expectedErrorMessage: "DataValidationError: Data is not a map: '[]interface {}{1, 2, 3}'",
-			expectedUpdatedData:  []any{1, 2, 3},
 		},
 		{
 			manager: arraySlicedNode{
@@ -719,16 +669,6 @@ func TestArrayFilteredNodeGet(t *testing.T) {
 				map[string]any{"author": "Stirner", "title": "Book3"},
 			},
 			expectedErrorMessage: "",
-		},
-		{
-			manager: arrayFilteredNode{
-				node:  node{name: "books"},
-				key:   "author",
-				op:    "!=",
-				value: "Nietzsche",
-			},
-			sourceData:           []any{1, 2, 3},
-			expectedErrorMessage: "DataValidationError: Data is not a map: '[]interface {}{1, 2, 3}'",
 		},
 		{
 			manager: arrayFilteredNode{
@@ -1006,18 +946,6 @@ func TestArrayFilteredNodePut(t *testing.T) {
 					map[string]any{"author": "Not Nietzsche", "title": "Book3"},
 				},
 			},
-		},
-		{
-			manager: arrayFilteredNode{
-				node:  node{name: "books"},
-				key:   "author",
-				op:    "!=",
-				value: "Nietzsche",
-			},
-			sourceData:           []any{1, 2, 3},
-			value:                100,
-			expectedErrorMessage: "DataValidationError: Data is not a map: '[]interface {}{1, 2, 3}'",
-			expectedUpdatedData:  []any{1, 2, 3},
 		},
 		{
 			manager: arrayFilteredNode{

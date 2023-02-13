@@ -35,7 +35,7 @@ func handleSlideTransformation(value any, transformer Transformer) (any, error) 
 }
 
 // handleMapper handles the cycle of a mapping of a src value to a dest based on the mapper conf
-func handleMapper(src any, dst any, mapper Mapper) error {
+func handleMapper(src map[string]any, dst map[string]any, mapper Mapper) error {
 	if err := validateMapper(mapper); err != nil {
 		return fmt.Errorf("Validation error: %v", err)
 	}
@@ -78,7 +78,7 @@ func validateMapper(mapper Mapper) error {
 }
 
 // Map maps data from a given map to another based on a configuration described in one or more Mapper objects
-func Map(src any, dst any, mappers []Mapper) (errors []error) {
+func Map(src map[string]any, dst map[string]any, mappers []Mapper) (errors []error) {
 	for i, mapper := range mappers {
 		if err := handleMapper(src, dst, mapper); err != nil {
 			errors = append(errors, fmt.Errorf("Mapper[%v]: %s", i, err.Error()))

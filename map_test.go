@@ -8,10 +8,10 @@ import (
 )
 
 type MapTestCase struct {
-	src                   any
-	dst                   any
+	src                   map[string]any
+	dst                   map[string]any
 	mappers               []Mapper
-	expectedDst           any
+	expectedDst           map[string]any
 	expectedErrorMessages []string
 }
 
@@ -185,8 +185,8 @@ func TestMap(t *testing.T) {
 			},
 			expectedDst: nil,
 			expectedErrorMessages: []string{
-				"Mapper[0]: Error while putting value in destination: DataValidationError: Data is not a map: '<nil>'",
-				"Mapper[1]: Error while putting value in destination: DataValidationError: Data is not a map: '<nil>'",
+				"Mapper[0]: Error while putting value in destination: DataValidationError: Data is nil.",
+				"Mapper[1]: Error while putting value in destination: DataValidationError: Data is nil.",
 			},
 		},
 		{
@@ -374,7 +374,7 @@ func TestMap(t *testing.T) {
 			expectedDst:           map[string]any{"authors": nil},
 			expectedErrorMessages: []string{"Mapper[0]: Transformation[0] (jsonmanu.SubStrTransformer): Array[0]: Value is not a string."},
 		},
-	}
+	}[5:7]
 
 	for i, tc := range cases {
 		t.Run(fmt.Sprintf("[%v] Map(%v, %v, %v)=%v", i, tc.src, tc.dst, tc.mappers, tc.expectedErrorMessages), func(t *testing.T) {

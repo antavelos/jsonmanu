@@ -52,7 +52,7 @@ func parse(path string) ([]nodeDataAccessor, error) {
 
 // Get retrieves a value out of a given map or a slice of maps as it is described in the provided JSONPath.
 // `data` has type `any` because it can be either a map or a slice.
-func Get(data any, path string) (any, error) {
+func Get(data map[string]any, path string) (any, error) {
 	nodes, err := parse(path)
 	if err != nil {
 		return nil, err
@@ -92,13 +92,13 @@ func ensureDataStrunctureFromNodes(data any, nodes []nodeDataAccessor) {
 
 // Put updates the branch(es) of a map or a slice of maps as it is described in the provided JSONPath with a new value.
 // `data` has type `any` because it can be either a map or a slice.
-func Put(data any, path string, value any) error {
+func Put(data map[string]any, path string, value any) error {
 	nodes, err := parse(path)
 	if err != nil {
 		return err
 	}
 
-	if !pathHasReccursiveDescent(path) {
+	if !pathHasReccursiveDescent(path) && data != nil {
 		ensureDataStrunctureFromNodes(data, nodes)
 	}
 
@@ -122,14 +122,14 @@ func Put(data any, path string, value any) error {
 
 	if isSlice(walkedData) {
 		for _, item := range walkedData.([]any) {
-			if err := lastNode.put(item, value); err != nil {
+			if err := lastNode.put(item.(map[string]any), value); err != nil {
 				return err
 			}
 		}
 		return nil
 	}
 
-	err = lastNode.put(walkedData, value)
+	err = lastNode.put(walkedData.(map[string]any), value)
 
 	return err
 }

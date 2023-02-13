@@ -235,7 +235,7 @@ func TestParse(t *testing.T) {
 
 type JsonmanGetTestCase struct {
 	path                 string
-	data                 any
+	data                 map[string]any
 	expectedErrorMessage string
 	expectedData         any
 }
@@ -716,7 +716,7 @@ func TestGet(t *testing.T) {
 
 type JsonmanPutTestCase struct {
 	path                 string
-	data                 any
+	data                 map[string]any
 	value                any
 	expectedErrorMessage string
 	expectedUpdatedData  any
