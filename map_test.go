@@ -155,8 +155,8 @@ func TestMap(t *testing.T) {
 			},
 			expectedDst: nil,
 			expectedErrorMessages: []string{
-				"Mapper[0]: Error while getting value from source: DataValidationError: Source key not found: 'invalid'",
-				"Mapper[1]: Error while getting value from source: DataValidationError: Source key not found: 'invalid'",
+				"Mapper[0]: Error while getting value from data: dataValidationError: Source key not found: 'invalid'",
+				"Mapper[1]: Error while getting value from data: dataValidationError: Source key not found: 'invalid'",
 			},
 		},
 		{
@@ -185,8 +185,8 @@ func TestMap(t *testing.T) {
 			},
 			expectedDst: nil,
 			expectedErrorMessages: []string{
-				"Mapper[0]: Error while putting value in destination: DataValidationError: Data is nil.",
-				"Mapper[1]: Error while putting value in destination: DataValidationError: Data is nil.",
+				"Mapper[0]: Error while putting value in destination: dataValidationError: Data is nil.",
+				"Mapper[1]: Error while putting value in destination: dataValidationError: Data is nil.",
 			},
 		},
 		{

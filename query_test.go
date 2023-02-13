@@ -7,45 +7,45 @@ import (
 	cmp "github.com/google/go-cmp/cmp"
 )
 
-type SplitJsonPAthTestCase struct {
-	path           string
+type SplitJsonPathTestCase struct {
+	jsonPath       string
 	expectedTokens []string
 }
 
 func TestSplitJsonPath(t *testing.T) {
-	testCases := []SplitJsonPAthTestCase{
+	testCases := []SplitJsonPathTestCase{
 		{
-			path:           "$.library.books",
+			jsonPath:       "$.library.books",
 			expectedTokens: []string{"$", "library", "books"},
 		},
 		{
-			path:           "$.library.books[*]",
+			jsonPath:       "$.library.books[*]",
 			expectedTokens: []string{"$", "library", "books[*]"},
 		},
 		{
-			path:           "$.library.books[1,2]",
+			jsonPath:       "$.library.books[1,2]",
 			expectedTokens: []string{"$", "library", "books[1,2]"},
 		},
 		{
-			path:           "$.library.books[2:4]",
+			jsonPath:       "$.library.books[2:4]",
 			expectedTokens: []string{"$", "library", "books[2:4]"},
 		},
 		{
-			path:           "$.library.books[?(@.price < 10)]",
+			jsonPath:       "$.library.books[?(@.price < 10)]",
 			expectedTokens: []string{"$", "library", "books[?(@.price < 10)]"},
 		},
 		{
-			path:           "$..books",
+			jsonPath:       "$..books",
 			expectedTokens: []string{"$", "", "books"},
 		},
 		{
-			path:           "$..*",
+			jsonPath:       "$..*",
 			expectedTokens: []string{"$", "", "*"},
 		},
 	}
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("jsonmanu.splitJsonPath(%v)=%v", tc.path, tc.expectedTokens), func(t *testing.T) {
-			tokens := splitJsonPath(tc.path)
+		t.Run(fmt.Sprintf("splitJsonPath(%v)=%v", tc.jsonPath, tc.expectedTokens), func(t *testing.T) {
+			tokens := splitJsonPath(tc.jsonPath)
 			if !cmp.Equal(tc.expectedTokens, tokens) {
 				t.Errorf("Expected tokens '%#v', but got '%#v'", tc.expectedTokens, tokens)
 			}
@@ -53,31 +53,31 @@ func TestSplitJsonPath(t *testing.T) {
 	}
 }
 
-type JsonmanParseTestCase struct {
-	path                 string
+type ParseJsonPathTestCase struct {
+	jsonPath             string
 	expectedNodes        []nodeDataAccessor
 	expectedErrorMessage string
 }
 
 func TestParse(t *testing.T) {
-	testCases := []JsonmanParseTestCase{
+	testCases := []ParseJsonPathTestCase{
 		{
-			path:                 "books",
+			jsonPath:             "books",
 			expectedNodes:        nil,
 			expectedErrorMessage: "JSONPath should start with '$.'",
 		},
 		{
-			path:                 "$.books.",
+			jsonPath:             "$.books.",
 			expectedNodes:        nil,
 			expectedErrorMessage: "JSONPath should not end with '.'",
 		},
 		{
-			path:                 "$.books. ",
+			jsonPath:             "$.books. ",
 			expectedNodes:        nil,
 			expectedErrorMessage: "Couldn't parse JSONPath substring 1: ' '",
 		},
 		{
-			path: "$.books[0]",
+			jsonPath: "$.books[0]",
 			expectedNodes: []nodeDataAccessor{
 				arrayIndexedNode{
 					node:    node{name: "books"},
@@ -87,7 +87,7 @@ func TestParse(t *testing.T) {
 			expectedErrorMessage: "",
 		},
 		{
-			path: "$.library.books[*]",
+			jsonPath: "$.library.books[*]",
 			expectedNodes: []nodeDataAccessor{
 				node{
 					name: "library",
@@ -99,7 +99,7 @@ func TestParse(t *testing.T) {
 			expectedErrorMessage: "",
 		},
 		{
-			path: "$.library.books[0]",
+			jsonPath: "$.library.books[0]",
 			expectedNodes: []nodeDataAccessor{
 				node{
 					name: "library",
@@ -112,7 +112,7 @@ func TestParse(t *testing.T) {
 			expectedErrorMessage: "",
 		},
 		{
-			path: "$.library.books[0,1,2]",
+			jsonPath: "$.library.books[0,1,2]",
 			expectedNodes: []nodeDataAccessor{
 				node{
 					name: "library",
@@ -125,7 +125,7 @@ func TestParse(t *testing.T) {
 			expectedErrorMessage: "",
 		},
 		{
-			path: "$.library.books[1:]",
+			jsonPath: "$.library.books[1:]",
 			expectedNodes: []nodeDataAccessor{
 				node{
 					name: "library",
@@ -138,7 +138,7 @@ func TestParse(t *testing.T) {
 			expectedErrorMessage: "",
 		},
 		{
-			path: "$.library.books[1:2]",
+			jsonPath: "$.library.books[1:2]",
 			expectedNodes: []nodeDataAccessor{
 				node{
 					name: "library",
@@ -152,7 +152,7 @@ func TestParse(t *testing.T) {
 			expectedErrorMessage: "",
 		},
 		{
-			path: "$.library.books[:2]",
+			jsonPath: "$.library.books[:2]",
 			expectedNodes: []nodeDataAccessor{
 				node{
 					name: "library",
@@ -165,7 +165,7 @@ func TestParse(t *testing.T) {
 			expectedErrorMessage: "",
 		},
 		{
-			path: "$.library.books[?(@.price < 10)]",
+			jsonPath: "$.library.books[?(@.price < 10)]",
 			expectedNodes: []nodeDataAccessor{
 				node{
 					name: "library",
@@ -180,7 +180,7 @@ func TestParse(t *testing.T) {
 			expectedErrorMessage: "",
 		},
 		{
-			path: "$.library.books[?(@.isbn)]",
+			jsonPath: "$.library.books[?(@.isbn)]",
 			expectedNodes: []nodeDataAccessor{
 				node{
 					name: "library",
@@ -195,7 +195,7 @@ func TestParse(t *testing.T) {
 			expectedErrorMessage: "",
 		},
 		{
-			path: "$..books",
+			jsonPath: "$..books",
 			expectedNodes: []nodeDataAccessor{
 				node{
 					name: "",
@@ -207,7 +207,7 @@ func TestParse(t *testing.T) {
 			expectedErrorMessage: "",
 		},
 		{
-			path: "$..*",
+			jsonPath: "$..*",
 			expectedNodes: []nodeDataAccessor{
 				node{
 					name: "",
@@ -221,8 +221,8 @@ func TestParse(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("jsonmanu.parse(%v)=%v, %v", tc.path, tc.expectedNodes, tc.expectedErrorMessage), func(t *testing.T) {
-			nodes, err := parse(tc.path)
+		t.Run(fmt.Sprintf("parseJsonPAth(%v)=%v, %v", tc.jsonPath, tc.expectedNodes, tc.expectedErrorMessage), func(t *testing.T) {
+			nodes, err := parseJsonPath(tc.jsonPath)
 			if !cmp.Equal(tc.expectedNodes, nodes, cmp.AllowUnexported(node{}, arrayIndexedNode{}, arrayFilteredNode{}, arraySlicedNode{})) {
 				t.Errorf("Expected nodes '%#v', but got '%#v'", tc.expectedNodes, nodes)
 			}
@@ -233,17 +233,17 @@ func TestParse(t *testing.T) {
 	}
 }
 
-type JsonmanGetTestCase struct {
-	path                 string
+type GetTestCase struct {
+	jsonPath             string
 	data                 map[string]any
 	expectedErrorMessage string
 	expectedData         any
 }
 
 func TestGet(t *testing.T) {
-	testCases := []JsonmanGetTestCase{
+	testCases := []GetTestCase{
 		{
-			path: ".books",
+			jsonPath: ".books",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
@@ -255,7 +255,7 @@ func TestGet(t *testing.T) {
 			expectedData:         nil,
 		},
 		{
-			path: "$.books.",
+			jsonPath: "$.books.",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
@@ -267,7 +267,7 @@ func TestGet(t *testing.T) {
 			expectedData:         nil,
 		},
 		{
-			path: "$.books",
+			jsonPath: "$.books",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
@@ -283,7 +283,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.store.books.*",
+			jsonPath: "$.store.books.*",
 			data: map[string]any{
 				"store": map[string]any{
 					"books": []any{
@@ -301,7 +301,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books.*",
+			jsonPath: "$.books.*",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
@@ -317,7 +317,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.store.books[*]",
+			jsonPath: "$.store.books[*]",
 			data: map[string]any{
 				"store": map[string]any{
 					"books": []any{
@@ -335,7 +335,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books[*]",
+			jsonPath: "$.books[*]",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
@@ -351,7 +351,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$..books[*]",
+			jsonPath: "$..books[*]",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
@@ -367,7 +367,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$..books.*",
+			jsonPath: "$..books.*",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
@@ -383,7 +383,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books[0]",
+			jsonPath: "$.books[0]",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
@@ -397,7 +397,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books[0,2]",
+			jsonPath: "$.books[0,2]",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
@@ -412,7 +412,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books[1:]",
+			jsonPath: "$.books[1:]",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
@@ -427,7 +427,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books[1:3]",
+			jsonPath: "$.books[1:3]",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
@@ -443,7 +443,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books[:3]",
+			jsonPath: "$.books[:3]",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
@@ -460,7 +460,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books[?(@.price > 10)]",
+			jsonPath: "$.books[?(@.price > 10)]",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1", "price": 15},
@@ -476,7 +476,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books[?(@.price >= 10)]",
+			jsonPath: "$.books[?(@.price >= 10)]",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1", "price": 15},
@@ -493,7 +493,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books[?(@.price < 10)]",
+			jsonPath: "$.books[?(@.price < 10)]",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1", "price": 15},
@@ -508,7 +508,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books[?(@.price <= 10)]",
+			jsonPath: "$.books[?(@.price <= 10)]",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1", "price": 15},
@@ -524,7 +524,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books[?(@.price == 10)]",
+			jsonPath: "$.books[?(@.price == 10)]",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1", "price": 15},
@@ -539,7 +539,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books[?(@.price > 10)].author",
+			jsonPath: "$.books[?(@.price > 10)].author",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1", "price": 15},
@@ -552,7 +552,7 @@ func TestGet(t *testing.T) {
 			expectedData:         []any{"Nietzsche", "Nietzsche"},
 		},
 		{
-			path: "$.books[?(@.author == Nietzsche)]",
+			jsonPath: "$.books[?(@.author == Nietzsche)]",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1", "price": 15},
@@ -572,7 +572,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books[?(@.price)]",
+			jsonPath: "$.books[?(@.price)]",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
@@ -588,7 +588,7 @@ func TestGet(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books[*].author",
+			jsonPath: "$.books[*].author",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1", "price": 15},
@@ -603,7 +603,7 @@ func TestGet(t *testing.T) {
 			expectedData:         []any{"Nietzsche", "Nietzsche", "Stirner", "Nietzsche", "Stirner", "Nietzsche"},
 		},
 		{
-			path: "$.books.author",
+			jsonPath: "$.books.author",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1", "price": 15},
@@ -618,7 +618,7 @@ func TestGet(t *testing.T) {
 			expectedData:         []any{"Nietzsche", "Nietzsche", "Stirner", "Nietzsche", "Stirner", "Nietzsche"},
 		},
 		{
-			path: "$.store..author",
+			jsonPath: "$.store..author",
 			data: map[string]any{
 				"store": map[string]any{
 					"books": []any{
@@ -635,7 +635,7 @@ func TestGet(t *testing.T) {
 			expectedData:         []any{"Nietzsche", "Nietzsche", "Stirner", "Nietzsche", "Stirner", "Nietzsche"},
 		},
 		{
-			path: "$..author",
+			jsonPath: "$..author",
 			data: map[string]any{
 				"store": map[string]any{
 					"book": map[string]any{
@@ -647,7 +647,7 @@ func TestGet(t *testing.T) {
 			expectedData:         []any{"Nietzsche"},
 		},
 		{
-			path: "$..author",
+			jsonPath: "$..author",
 			data: map[string]any{
 				"store": map[string]any{
 					"books": []any{
@@ -664,7 +664,7 @@ func TestGet(t *testing.T) {
 			expectedData:         []any{"Nietzsche", "Nietzsche", "Stirner", "Nietzsche", "Stirner", "Nietzsche"},
 		},
 		{
-			path: "$..price",
+			jsonPath: "$..price",
 			data: map[string]any{
 				"store": map[string]any{
 					"books": []any{
@@ -681,7 +681,7 @@ func TestGet(t *testing.T) {
 			expectedData:         []any{15, 20, 15, 5, 10, 10},
 		},
 		{
-			path: "$..books[0].author",
+			jsonPath: "$..books[0].author",
 			data: map[string]any{
 				"store": map[string]any{
 					"books": []any{
@@ -701,9 +701,9 @@ func TestGet(t *testing.T) {
 
 	for i, tc := range testCases {
 
-		t.Run(fmt.Sprintf("(%v) - jsonmanu.Get(%v, %v)=%v, %v", i, tc.data, tc.path, tc.expectedData, tc.expectedErrorMessage),
+		t.Run(fmt.Sprintf("(%v) - Get(%v, %v)=%v, %v", i, tc.data, tc.jsonPath, tc.expectedData, tc.expectedErrorMessage),
 			func(t *testing.T) {
-				data, err := Get(tc.data, tc.path)
+				data, err := Get(tc.data, tc.jsonPath)
 				if (err == nil && len(tc.expectedErrorMessage) > 0) || (err != nil && err.Error() != tc.expectedErrorMessage) {
 					t.Errorf("Expected error message '%#v', but got '%#v'", tc.expectedErrorMessage, err.Error())
 				}
@@ -714,18 +714,18 @@ func TestGet(t *testing.T) {
 	}
 }
 
-type JsonmanPutTestCase struct {
-	path                 string
+type PutTestCase struct {
+	jsonPath             string
 	data                 map[string]any
 	value                any
 	expectedErrorMessage string
-	expectedUpdatedData  any
+	expectedUpdatedData  map[string]any
 }
 
 func TestPut(t *testing.T) {
-	testCases := []JsonmanPutTestCase{
+	testCases := []PutTestCase{
 		{
-			path: ".books",
+			jsonPath: ".books",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
@@ -744,7 +744,7 @@ func TestPut(t *testing.T) {
 			},
 		},
 		{
-			path: "$.books.",
+			jsonPath: "$.books.",
 			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
@@ -763,7 +763,7 @@ func TestPut(t *testing.T) {
 			},
 		},
 		{
-			path: "$.book.author",
+			jsonPath: "$.book.author",
 			data: map[string]any{
 				"book": map[string]any{
 					"author": "Someone",
@@ -778,7 +778,7 @@ func TestPut(t *testing.T) {
 			},
 		},
 		{
-			path: "$.book[*].author",
+			jsonPath: "$.book[*].author",
 			data: map[string]any{
 				"book": []any{
 					map[string]any{"author": "Someone"},
@@ -795,7 +795,7 @@ func TestPut(t *testing.T) {
 			},
 		},
 		{
-			path: "$.book[0].author",
+			jsonPath: "$.book[0].author",
 			data: map[string]any{
 				"book": []any{
 					map[string]any{"author": "Someone"},
@@ -812,7 +812,7 @@ func TestPut(t *testing.T) {
 			},
 		},
 		{
-			path: "$.book[0, 1].author",
+			jsonPath: "$.book[0, 1].author",
 			data: map[string]any{
 				"book": []any{
 					map[string]any{"author": "Someone"},
@@ -829,7 +829,7 @@ func TestPut(t *testing.T) {
 			},
 		},
 		{
-			path: "$.book[:1].author",
+			jsonPath: "$.book[:1].author",
 			data: map[string]any{
 				"book": []any{
 					map[string]any{"author": "Someone"},
@@ -848,7 +848,7 @@ func TestPut(t *testing.T) {
 			},
 		},
 		{
-			path: "$.book[1:].author",
+			jsonPath: "$.book[1:].author",
 			data: map[string]any{
 				"book": []any{
 					map[string]any{"author": "Someone"},
@@ -867,7 +867,7 @@ func TestPut(t *testing.T) {
 			},
 		},
 		{
-			path: "$.book[1:2].author",
+			jsonPath: "$.book[1:2].author",
 			data: map[string]any{
 				"book": []any{
 					map[string]any{"author": "Someone"},
@@ -886,7 +886,7 @@ func TestPut(t *testing.T) {
 			},
 		},
 		{
-			path: "$.store.books[?(@.author == Nietzsche)].price",
+			jsonPath: "$.store.books[?(@.author == Nietzsche)].price",
 			data: map[string]any{
 				"store": map[string]any{
 					"books": []any{
@@ -915,7 +915,7 @@ func TestPut(t *testing.T) {
 			},
 		},
 		{
-			path: "$..books[?(@.author == Nietzsche)].price",
+			jsonPath: "$..books[?(@.author == Nietzsche)].price",
 			data: map[string]any{
 				"store": map[string]any{
 					"books": []any{
@@ -944,7 +944,7 @@ func TestPut(t *testing.T) {
 			},
 		},
 		{
-			path: "$.store..books[?(@.author == Nietzsche)].price",
+			jsonPath: "$.store..books[?(@.author == Nietzsche)].price",
 			data: map[string]any{
 				"store": map[string]any{
 					"library": map[string]any{
@@ -977,7 +977,7 @@ func TestPut(t *testing.T) {
 			},
 		},
 		{
-			path: "$..author",
+			jsonPath: "$..author",
 			data: map[string]any{
 				"book": []any{
 					map[string]any{"author": "Someone"},
@@ -994,7 +994,7 @@ func TestPut(t *testing.T) {
 			},
 		},
 		{
-			path: "$..author",
+			jsonPath: "$..author",
 			data: map[string]any{
 				"store1": map[string]any{
 					"books": []any{
@@ -1027,7 +1027,7 @@ func TestPut(t *testing.T) {
 			},
 		},
 		{
-			path: "$..price",
+			jsonPath: "$..price",
 			data: map[string]any{
 				"store": map[string]any{
 					"books": []any{
@@ -1056,7 +1056,7 @@ func TestPut(t *testing.T) {
 			},
 		},
 		{
-			path: "$.store..price",
+			jsonPath: "$.store..price",
 			data: map[string]any{
 				"store": map[string]any{
 					"books": []any{
@@ -1087,8 +1087,8 @@ func TestPut(t *testing.T) {
 	}
 
 	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("(%v) - jsonmanu.Put(%v, %v, %v)=%v", i, tc.data, tc.path, tc.value, tc.expectedErrorMessage), func(t *testing.T) {
-			err := Put(tc.data, tc.path, tc.value)
+		t.Run(fmt.Sprintf("(%v) - Put(%v, %v, %v)=%v", i, tc.data, tc.jsonPath, tc.value, tc.expectedErrorMessage), func(t *testing.T) {
+			err := Put(tc.data, tc.jsonPath, tc.value)
 			if (err == nil && len(tc.expectedErrorMessage) > 0) || (err != nil && err.Error() != tc.expectedErrorMessage) {
 				t.Errorf("Expected error message '%#v', but got '%#v'", tc.expectedErrorMessage, err.Error())
 			}

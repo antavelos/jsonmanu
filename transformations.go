@@ -21,9 +21,9 @@ type Transformation struct {
 	// Transformer applies a predefined logic on a specific value
 	Trsnfmr Transformer
 
-	// AsArray determines whether a retrieved source array value will be retrieved as a whole array or not.
-	// An array retrieved value is such either because a grouping occured due to a parent array higher in the source structure
-	// or because it is actually an array in the original source. By default the transformation will apply to each element of
+	// AsArray determines whether a retrieved data array value will be retrieved as a whole array or not.
+	// An array retrieved value is such either because a grouping occured due to a parent array higher in the data structure
+	// or because it is actually an array in the original data. By default the transformation will apply to each element of
 	// the array unless this flag is set as true.
 	AsArray bool
 }
@@ -104,7 +104,7 @@ func (t ReplaceTransformer) Transform(value any) (any, error) {
 	return strings.Replace(value.(string), t.OldVal, t.NewVal, -1), nil
 }
 
-// StringMatchTransformer finds
+// StringMatchTransformer is used to match a substring within a string.
 type StringMatchTransformer struct {
 
 	// Regex is the regular expression to be used for the string matching.
@@ -158,12 +158,12 @@ func (t SubStrTransformer) Transform(value any) (any, error) {
 	return value.(string)[t.Start:t.End], nil
 }
 
-// NumberTransformer converts a string value to float64
+// NumberTransformer converts a string value to float64.
 type NumberTransformer struct{}
 
 // NumberTransformer Transform applies the number transformation.
 // It expects a numerical string value i.e. "234", "23.434" etc
-// It will returned value will be float64 so "123.2" will be transformed to 123.2 and "123" will be transformed to 123.0
+// It will returned value will be float64 so "123.2" will be transformed to 123.2 and "123" will be transformed to 123.0.
 func (t NumberTransformer) Transform(value any) (any, error) {
 	if !isString(value) {
 		return nil, errors.New("Value is not a string.")

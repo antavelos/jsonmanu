@@ -2,8 +2,9 @@ package jsonmanu
 
 import (
 	"fmt"
-	cmp "github.com/google/go-cmp/cmp"
 	"testing"
+
+	cmp "github.com/google/go-cmp/cmp"
 )
 
 type FlattenArrayTestCase struct {
