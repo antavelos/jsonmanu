@@ -6,14 +6,14 @@ import (
 
 // Mapper holds the configuration of a mapping from a certain data structure to another one.
 type Mapper struct {
-	// SrcJsonPath is the JsonPath of the data data where data will be retrieved from
+	// SrcJsonPath is the JsonPath of the data data where data will be retrieved from.
 	SrcJsonPath string
 
-	// DstJsonPath is the JsonPath of the destination data where data will be put in
+	// DstJsonPath is the JsonPath of the destination data where data will be put in.
 	DstJsonPath string
 
 	// Transformations enable optional functionality to be applied on the retrieved value before it's put in the destination data.
-	// The transformations will be applied in a chain mode according to their order
+	// The transformations will be applied in a chain mode according to their configuration order.
 	Transformations []Transformation
 }
 
@@ -78,8 +78,14 @@ func validateMapper(mapper Mapper) error {
 }
 
 // Map maps data from a given source map to another destination map based on a configuration described in one or more Mapper objects.
-// The `dst“ map object must not be nil. If the path described in the corresponding jsonPath of a mapper does not exist in it it will be created on the fly.
-// It logs eny error occured during the mapping for each mapper and returns an array of them.
+//
+// The `dst` map object must not be nil.
+//
+// If the path described in the corresponding jsonPath of a mapper does not exist in it it will be created on the fly.
+//
+// It returns an array of errors per mapper.
+//
+// The changes in `dst` apply in place.
 func Map(src map[string]any, dst map[string]any, mappers []Mapper) (errors []error) {
 	for i, mapper := range mappers {
 		if err := handleMapper(src, dst, mapper); err != nil {

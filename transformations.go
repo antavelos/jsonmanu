@@ -39,9 +39,12 @@ type SplitTransformer struct {
 	Index int
 }
 
-// SplitTransformer Transform applies the split transformation:
+// SplitTransformer Transform applies the split transformation.
+//
 // It expects a string value.
+//
 // If expects an index within the bounds of the occured array.
+//
 // If the provided index is -1 then the whole occured array will be returned.
 func (t SplitTransformer) Transform(value any) (any, error) {
 	if !isString(value) {
@@ -68,8 +71,10 @@ type JoinTransformer struct {
 	Delim string
 }
 
-// JoinTransformer Transform applies the join transformation:
+// JoinTransformer Transform applies the join transformation.
+//
 // It expects an array value which can be of any kind.
+//
 // The array elements must implement the String method of the Stringer interface.
 func (t JoinTransformer) Transform(value any) (any, error) {
 	if !isSlice(value) {
@@ -94,7 +99,8 @@ type ReplaceTransformer struct {
 	NewVal string
 }
 
-// ReplaceTransformer Transform applies the replace transformation:
+// ReplaceTransformer Transform applies the replace transformation.
+//
 // It expects a string value.
 func (t ReplaceTransformer) Transform(value any) (any, error) {
 	if !isString(value) {
@@ -111,8 +117,10 @@ type StringMatchTransformer struct {
 	Regex string
 }
 
-// StringMatchTransformer Transform applies the string match transformation:
+// StringMatchTransformer Transform applies the string match transformation.
+//
 // It expects a string value.
+//
 // It will return the first matched substring found in the provided value.
 func (t StringMatchTransformer) Transform(value any) (any, error) {
 	if !isString(value) {
@@ -135,9 +143,12 @@ type SubStrTransformer struct {
 	End int
 }
 
-// SubStrTransformer Transform applies the substring transformation:
+// SubStrTransformer Transform applies the substring transformation.
+//
 // It expectd a string value.
+//
 // The indices must be withing the length of the string value.
+//
 // If End index is not provided the value will be sliced from Start index to the end of the value.
 func (t SubStrTransformer) Transform(value any) (any, error) {
 	if !isString(value) {
@@ -162,8 +173,10 @@ func (t SubStrTransformer) Transform(value any) (any, error) {
 type NumberTransformer struct{}
 
 // NumberTransformer Transform applies the number transformation.
+//
 // It expects a numerical string value i.e. "234", "23.434" etc
-// It will returned value will be float64 so "123.2" will be transformed to 123.2 and "123" will be transformed to 123.0.
+//
+// The returned value will be of type `float64` so "123.2" will be transformed to 123.2 and "123" will be transformed to 123.0.
 func (t NumberTransformer) Transform(value any) (any, error) {
 	if !isString(value) {
 		return nil, errors.New("Value is not a string.")

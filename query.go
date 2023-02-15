@@ -51,7 +51,9 @@ func parseJsonPath(jsonPath string) ([]nodeDataAccessor, error) {
 }
 
 // Get retrieves a value out of a given map or a slice of maps as it is described in the provided JSONPath.
+//
 // The `data` must not be nil.
+//
 // It returns the retrieved data if everything goes well. Otherwise nil along with the relevant error.
 func Get(data map[string]any, jsonPath string) (any, error) {
 	nodes, err := parseJsonPath(jsonPath)
@@ -93,8 +95,11 @@ func ensureDataStrunctureFromNodes(data any, nodes []nodeDataAccessor) {
 }
 
 // Put updates the branch(es) of a map or a slice of maps as it is described in the provided JSONPath with a new value.
+//
 // The `data` must not be nil. The changes will apply in place.
+//
 // If the path described in the `jsonPath` does not exist then it will be created on the fly. Attibutes referred within an array condition will be ignored.
+//
 // An error will be returned should anything goes wrong.
 func Put(data map[string]any, jsonPath string, value any) error {
 	nodes, err := parseJsonPath(jsonPath)
