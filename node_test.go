@@ -3,25 +3,10 @@ package jsonmanu
 import (
 	"fmt"
 
-	"github.com/google/go-cmp/cmp"
-
-	// "github.com/google/go-cmp/cmp/cmpopts"
 	"testing"
-)
 
-// JSONPath				    Result
-// $.store.book[*].author	the authors of all books in the store
-// $..author				all authors
-// $.store.*				all things in store, which are some books and a red bicycle.
-// $.store..price			the price of everything in the store.
-// $..book[2]				the third book
-// $..book[(@.length-1)]
-// $..book[-1:]			    the last book in order.
-// $..book[0,1]
-// $..book[:2]		    	the first two books
-// $..book[?(@.isbn)]		filter all books with isbn number
-// $..book[?(@.price<10)]	filter all books cheapier than 10
-// $..*				    	all Elements in XML document. All members of JSON structure.
+	"github.com/google/go-cmp/cmp"
+)
 
 type MatchDictionaryTestCase struct {
 	pattern      string
@@ -98,14 +83,14 @@ func TestNnodeFromJsonPathSubNode(t *testing.T) {
 
 type NodeDataAccessorGetTestCase struct {
 	manager              nodeDataAccessor
-	sourceData           any
+	data                 map[string]any
 	expectedData         any
 	expectedErrorMessage string
 }
 
 type NodeDataAccessorPutTestCase struct {
 	manager              nodeDataAccessor
-	sourceData           any
+	data                 map[string]any
 	value                any
 	expectedErrorMessage string
 	expectedUpdatedData  any
@@ -115,27 +100,21 @@ func TestNodeGet(t *testing.T) {
 	testCases := []NodeDataAccessorGetTestCase{
 		{
 			manager:              node{"books"},
-			sourceData:           map[string]any{"books": []any{1, 2, 3}},
+			data:                 map[string]any{"books": []any{1, 2, 3}},
 			expectedData:         []any{1, 2, 3},
 			expectedErrorMessage: "",
 		},
 		{
 			manager:              node{"books"},
-			sourceData:           map[string]any{"book": []any{1, 2, 3}},
+			data:                 map[string]any{"book": []any{1, 2, 3}},
 			expectedData:         nil,
-			expectedErrorMessage: "SourceValidationError: Source key not found: 'books'",
-		},
-		{
-			manager:              node{"books"},
-			sourceData:           []any{1, 2, 3},
-			expectedData:         nil,
-			expectedErrorMessage: "SourceValidationError: Source is not a map: '[]interface {}{1, 2, 3}'",
+			expectedErrorMessage: "dataValidationError: Source key not found: 'books'",
 		},
 	}
 
 	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("[%v]: node.get(%v)=%v", i, tc.sourceData, tc.expectedData), func(t *testing.T) {
-			data, err := tc.manager.get(tc.sourceData)
+		t.Run(fmt.Sprintf("[%v]: node.get(%v)=%v", i, tc.data, tc.expectedData), func(t *testing.T) {
+			data, err := tc.manager.get(tc.data)
 			if (err == nil && len(tc.expectedErrorMessage) > 0) || (err != nil && err.Error() != tc.expectedErrorMessage) {
 				t.Errorf("Expected error message '%#v', but got '%#v'", tc.expectedErrorMessage, err.Error())
 			}
@@ -150,56 +129,35 @@ func TestNodePut(t *testing.T) {
 	testCases := []NodeDataAccessorPutTestCase{
 		{
 			manager:              node{"price"},
-			sourceData:           map[string]any{"price": 10},
+			data:                 map[string]any{"price": 10},
 			value:                20,
 			expectedErrorMessage: "",
 			expectedUpdatedData:  map[string]any{"price": 20},
 		},
 		{
 			manager:              node{"author"},
-			sourceData:           map[string]any{"author": "Stirner"},
+			data:                 map[string]any{"author": "Stirner"},
 			value:                "Nietzsche",
 			expectedErrorMessage: "",
 			expectedUpdatedData:  map[string]any{"author": "Nietzsche"},
 		},
 		{
 			manager:              node{"numbers"},
-			sourceData:           map[string]any{"numbers": []any{1, 2, 3}},
+			data:                 map[string]any{"numbers": []any{1, 2, 3}},
 			value:                []any{2.3, 4.5, 6.7},
 			expectedErrorMessage: "",
 			expectedUpdatedData:  map[string]any{"numbers": []any{2.3, 4.5, 6.7}},
 		},
-		{
-			manager:              node{"numbers"},
-			sourceData:           []any{1, 2, 3},
-			value:                []any{2.3, 4.5, 6.7},
-			expectedErrorMessage: "SourceValidationError: Source is not a map: '[]interface {}{1, 2, 3}'",
-			expectedUpdatedData:  []any{1, 2, 3},
-		},
-		{
-			manager:              node{"numbers"},
-			sourceData:           []any{1, 2, 3},
-			value:                100,
-			expectedErrorMessage: "SourceValidationError: Source is not a map: '[]interface {}{1, 2, 3}'",
-			expectedUpdatedData:  []any{1, 2, 3},
-		},
-		{
-			manager:              node{"numbers"},
-			sourceData:           map[string]any{"book": []any{1, 2, 3}},
-			value:                100,
-			expectedErrorMessage: "SourceValidationError: Source key not found: 'numbers'",
-			expectedUpdatedData:  map[string]any{"book": []any{1, 2, 3}},
-		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("node.put(%v, %v)=%v", tc.sourceData, tc.value, tc.expectedUpdatedData), func(t *testing.T) {
-			err := tc.manager.put(tc.sourceData, tc.value)
+		t.Run(fmt.Sprintf("node.put(%v, %v)=%v", tc.data, tc.value, tc.expectedUpdatedData), func(t *testing.T) {
+			err := tc.manager.put(tc.data, tc.value)
 			if (err == nil && len(tc.expectedErrorMessage) > 0) || (err != nil && err.Error() != tc.expectedErrorMessage) {
 				t.Errorf("Expected error '%#v', but got '%#v'", tc.expectedErrorMessage, err.Error())
 			}
-			if !cmp.Equal(tc.expectedUpdatedData, tc.sourceData) {
-				t.Errorf("Expected '%#v', but got '%#v'", tc.expectedUpdatedData, tc.sourceData)
+			if !cmp.Equal(tc.expectedUpdatedData, tc.data) {
+				t.Errorf("Expected '%#v', but got '%#v'", tc.expectedUpdatedData, tc.data)
 			}
 		})
 	}
@@ -212,16 +170,7 @@ func TestArrayIndexedNodeGet(t *testing.T) {
 				node:    node{name: "books"},
 				indices: []int{0, 2},
 			},
-			sourceData:           []any{1, 2, 3},
-			expectedData:         nil,
-			expectedErrorMessage: "SourceValidationError: Source is not a map: '[]interface {}{1, 2, 3}'",
-		},
-		{
-			manager: arrayIndexedNode{
-				node:    node{name: "books"},
-				indices: []int{0, 2},
-			},
-			sourceData:           map[string]any{"books": []any{1, 2, 3}},
+			data:                 map[string]any{"books": []any{1, 2, 3}},
 			expectedData:         []any{1, 3},
 			expectedErrorMessage: "",
 		},
@@ -230,7 +179,7 @@ func TestArrayIndexedNodeGet(t *testing.T) {
 				node:    node{name: "books"},
 				indices: []int{0},
 			},
-			sourceData:           map[string]any{"books": []any{1, 2, 3}},
+			data:                 map[string]any{"books": []any{1, 2, 3}},
 			expectedData:         []any{1},
 			expectedErrorMessage: "",
 		},
@@ -239,7 +188,7 @@ func TestArrayIndexedNodeGet(t *testing.T) {
 				node:    node{name: "books"},
 				indices: []int{0, -1, 4},
 			},
-			sourceData:           map[string]any{"books": []any{1, 2, 3}},
+			data:                 map[string]any{"books": []any{1, 2, 3}},
 			expectedData:         []any{1},
 			expectedErrorMessage: "",
 		},
@@ -248,7 +197,7 @@ func TestArrayIndexedNodeGet(t *testing.T) {
 				node:    node{name: "books"},
 				indices: []int{0, 4},
 			},
-			sourceData:           map[string]any{"books": []any{1, 2, 3}},
+			data:                 map[string]any{"books": []any{1, 2, 3}},
 			expectedData:         []any{1},
 			expectedErrorMessage: "",
 		},
@@ -257,24 +206,24 @@ func TestArrayIndexedNodeGet(t *testing.T) {
 				node:    node{name: "books"},
 				indices: []int{0, 4},
 			},
-			sourceData:           map[string]any{"books": 1},
+			data:                 map[string]any{"books": 1},
 			expectedData:         nil,
-			expectedErrorMessage: "SourceValidationError: Value of key 'books' is not an array: 1",
+			expectedErrorMessage: "dataValidationError: Value of key 'books' is not an array: 1",
 		},
 		{
 			manager: arrayIndexedNode{
 				node:    node{name: "books"},
 				indices: []int{},
 			},
-			sourceData:           map[string]any{"books": []any{1, 2, 3}},
+			data:                 map[string]any{"books": []any{1, 2, 3}},
 			expectedData:         []any{1, 2, 3},
 			expectedErrorMessage: "",
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("arrayIndexedNode.get(%v)=%v", tc.sourceData, tc.expectedData), func(t *testing.T) {
-			data, err := tc.manager.get(tc.sourceData)
+		t.Run(fmt.Sprintf("arrayIndexedNode.get(%v)=%v", tc.data, tc.expectedData), func(t *testing.T) {
+			data, err := tc.manager.get(tc.data)
 
 			if (err == nil && len(tc.expectedErrorMessage) > 0) || (err != nil && err.Error() != tc.expectedErrorMessage) {
 				t.Errorf("Expected error '%#v', but got '%#v'", tc.expectedErrorMessage, err.Error())
@@ -294,7 +243,7 @@ func TestArrayIndexedNodePut(t *testing.T) {
 				node:    node{name: "books"},
 				indices: []int{0, 2},
 			},
-			sourceData:           map[string]any{"books": []any{1, 2, 3}},
+			data:                 map[string]any{"books": []any{1, 2, 3}},
 			value:                100,
 			expectedErrorMessage: "",
 			expectedUpdatedData:  map[string]any{"books": []any{100, 2, 100}},
@@ -304,7 +253,7 @@ func TestArrayIndexedNodePut(t *testing.T) {
 				node:    node{name: "books"},
 				indices: []int{0, 2},
 			},
-			sourceData:           map[string]any{"books": []any{1, 2, 3}},
+			data:                 map[string]any{"books": []any{1, 2, 3}},
 			value:                "hundred",
 			expectedErrorMessage: "",
 			expectedUpdatedData:  map[string]any{"books": []any{"hundred", 2, "hundred"}},
@@ -314,19 +263,9 @@ func TestArrayIndexedNodePut(t *testing.T) {
 				node:    node{name: "books"},
 				indices: []int{0, 2},
 			},
-			sourceData:           []any{1, 2, 3},
+			data:                 map[string]any{"book": []any{1, 2, 3}},
 			value:                100,
-			expectedErrorMessage: "SourceValidationError: Source is not a map: '[]interface {}{1, 2, 3}'",
-			expectedUpdatedData:  []any{1, 2, 3},
-		},
-		{
-			manager: arrayIndexedNode{
-				node:    node{name: "books"},
-				indices: []int{0, 2},
-			},
-			sourceData:           map[string]any{"book": []any{1, 2, 3}},
-			value:                100,
-			expectedErrorMessage: "SourceValidationError: Source key not found: 'books'",
+			expectedErrorMessage: "dataValidationError: Source key not found: 'books'",
 			expectedUpdatedData:  map[string]any{"book": []any{1, 2, 3}},
 		},
 		{
@@ -334,21 +273,21 @@ func TestArrayIndexedNodePut(t *testing.T) {
 				node:    node{name: "books"},
 				indices: []int{0, 2},
 			},
-			sourceData:           map[string]any{"books": 1},
+			data:                 map[string]any{"books": 1},
 			value:                100,
-			expectedErrorMessage: "SourceValidationError: Value of key 'books' is not an array: 1",
+			expectedErrorMessage: "dataValidationError: Value of key 'books' is not an array: 1",
 			expectedUpdatedData:  map[string]any{"books": 1},
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("arrayIndexedNode.put(%v)=%v", tc.sourceData, tc.expectedErrorMessage), func(t *testing.T) {
-			err := tc.manager.put(tc.sourceData, tc.value)
+		t.Run(fmt.Sprintf("arrayIndexedNode.put(%v)=%v", tc.data, tc.expectedErrorMessage), func(t *testing.T) {
+			err := tc.manager.put(tc.data, tc.value)
 			if (err == nil && len(tc.expectedErrorMessage) > 0) || (err != nil && err.Error() != tc.expectedErrorMessage) {
 				t.Errorf("Expected error '%#v', but got '%#v'", tc.expectedErrorMessage, err.Error())
 			}
-			if !cmp.Equal(tc.expectedUpdatedData, tc.sourceData) {
-				t.Errorf("Expected '%#v', but got '%#v'", tc.expectedUpdatedData, tc.sourceData)
+			if !cmp.Equal(tc.expectedUpdatedData, tc.data) {
+				t.Errorf("Expected '%#v', but got '%#v'", tc.expectedUpdatedData, tc.data)
 			}
 		})
 	}
@@ -362,7 +301,7 @@ func TestArraySlicedNodeGet(t *testing.T) {
 				start: 0,
 				end:   1,
 			},
-			sourceData:           map[string]any{"books": []any{1, 2, 3}},
+			data:                 map[string]any{"books": []any{1, 2, 3}},
 			expectedData:         []any{1},
 			expectedErrorMessage: "",
 		},
@@ -371,7 +310,7 @@ func TestArraySlicedNodeGet(t *testing.T) {
 				node:  node{name: "books"},
 				start: 1,
 			},
-			sourceData:           map[string]any{"books": []any{1, 2, 3}},
+			data:                 map[string]any{"books": []any{1, 2, 3}},
 			expectedData:         []any{2, 3},
 			expectedErrorMessage: "",
 		},
@@ -380,7 +319,7 @@ func TestArraySlicedNodeGet(t *testing.T) {
 				node: node{name: "books"},
 				end:  2,
 			},
-			sourceData:           map[string]any{"books": []any{1, 2, 3}},
+			data:                 map[string]any{"books": []any{1, 2, 3}},
 			expectedData:         []any{1, 2},
 			expectedErrorMessage: "",
 		},
@@ -388,7 +327,7 @@ func TestArraySlicedNodeGet(t *testing.T) {
 			manager: arraySlicedNode{
 				node: node{name: "books"},
 			},
-			sourceData:           map[string]any{"books": []any{1, 2, 3}},
+			data:                 map[string]any{"books": []any{1, 2, 3}},
 			expectedData:         map[string]any{"books": []any{1, 2, 3}},
 			expectedErrorMessage: "",
 		},
@@ -396,9 +335,9 @@ func TestArraySlicedNodeGet(t *testing.T) {
 			manager: arraySlicedNode{
 				node: node{name: "book"},
 			},
-			sourceData:           map[string]any{"books": []any{1, 2, 3}},
+			data:                 map[string]any{"books": []any{1, 2, 3}},
 			expectedData:         nil,
-			expectedErrorMessage: "SourceValidationError: Source key not found: 'book'",
+			expectedErrorMessage: "dataValidationError: Source key not found: 'book'",
 		},
 		{
 			manager: arraySlicedNode{
@@ -406,15 +345,15 @@ func TestArraySlicedNodeGet(t *testing.T) {
 				start: 0,
 				end:   1,
 			},
-			sourceData:           map[string]any{"books": 1},
+			data:                 map[string]any{"books": 1},
 			expectedData:         nil,
-			expectedErrorMessage: "SourceValidationError: Value of key 'books' is not an array: 1",
+			expectedErrorMessage: "dataValidationError: Value of key 'books' is not an array: 1",
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("arraySlicedNode.get(%v)=%v", tc.sourceData, tc.expectedData), func(t *testing.T) {
-			data, err := tc.manager.get(tc.sourceData)
+		t.Run(fmt.Sprintf("arraySlicedNode.get(%v)=%v", tc.data, tc.expectedData), func(t *testing.T) {
+			data, err := tc.manager.get(tc.data)
 
 			if (err == nil && len(tc.expectedErrorMessage) > 0) || (err != nil && err.Error() != tc.expectedErrorMessage) {
 				t.Errorf("Expected error '%#v', but got '%#v'", tc.expectedErrorMessage, err.Error())
@@ -435,7 +374,7 @@ func TestArraySlicedNodePut(t *testing.T) {
 				start: 0,
 				end:   1,
 			},
-			sourceData:           map[string]any{"books": []any{1, 2, 3}},
+			data:                 map[string]any{"books": []any{1, 2, 3}},
 			value:                100,
 			expectedErrorMessage: "",
 			expectedUpdatedData:  map[string]any{"books": []any{100, 2, 3}},
@@ -445,7 +384,7 @@ func TestArraySlicedNodePut(t *testing.T) {
 				node: node{name: "books"},
 				end:  1,
 			},
-			sourceData:           map[string]any{"books": []any{1, 2, 3}},
+			data:                 map[string]any{"books": []any{1, 2, 3}},
 			value:                100,
 			expectedErrorMessage: "",
 			expectedUpdatedData:  map[string]any{"books": []any{100, 2, 3}},
@@ -456,7 +395,7 @@ func TestArraySlicedNodePut(t *testing.T) {
 				start: 1,
 				end:   2,
 			},
-			sourceData:           map[string]any{"books": []any{1, 2, 3}},
+			data:                 map[string]any{"books": []any{1, 2, 3}},
 			value:                100,
 			expectedErrorMessage: "",
 			expectedUpdatedData:  map[string]any{"books": []any{1, 100, 3}},
@@ -466,7 +405,7 @@ func TestArraySlicedNodePut(t *testing.T) {
 				node:  node{name: "books"},
 				start: 1,
 			},
-			sourceData:           map[string]any{"books": []any{1, 2, 3}},
+			data:                 map[string]any{"books": []any{1, 2, 3}},
 			value:                100,
 			expectedErrorMessage: "",
 			expectedUpdatedData:  map[string]any{"books": []any{1, 100, 100}},
@@ -475,7 +414,7 @@ func TestArraySlicedNodePut(t *testing.T) {
 			manager: arraySlicedNode{
 				node: node{name: "books"},
 			},
-			sourceData:           map[string]any{"books": []any{1, 2, 3}},
+			data:                 map[string]any{"books": []any{1, 2, 3}},
 			value:                100,
 			expectedErrorMessage: "",
 			expectedUpdatedData:  map[string]any{"books": []any{1, 2, 3}},
@@ -486,20 +425,9 @@ func TestArraySlicedNodePut(t *testing.T) {
 				start: 1,
 				end:   2,
 			},
-			sourceData:           []any{1, 2, 3},
+			data:                 map[string]any{"book": []any{1, 2, 3}},
 			value:                100,
-			expectedErrorMessage: "SourceValidationError: Source is not a map: '[]interface {}{1, 2, 3}'",
-			expectedUpdatedData:  []any{1, 2, 3},
-		},
-		{
-			manager: arraySlicedNode{
-				node:  node{name: "books"},
-				start: 1,
-				end:   2,
-			},
-			sourceData:           map[string]any{"book": []any{1, 2, 3}},
-			value:                100,
-			expectedErrorMessage: "SourceValidationError: Source key not found: 'books'",
+			expectedErrorMessage: "dataValidationError: Source key not found: 'books'",
 			expectedUpdatedData:  map[string]any{"book": []any{1, 2, 3}},
 		},
 		{
@@ -508,21 +436,21 @@ func TestArraySlicedNodePut(t *testing.T) {
 				start: 1,
 				end:   2,
 			},
-			sourceData:           map[string]any{"books": 1},
+			data:                 map[string]any{"books": 1},
 			value:                100,
-			expectedErrorMessage: "SourceValidationError: Value of key 'books' is not an array: 1",
+			expectedErrorMessage: "dataValidationError: Value of key 'books' is not an array: 1",
 			expectedUpdatedData:  map[string]any{"books": 1},
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("arraySlicedNode.put(%v)=%v", tc.sourceData, tc.expectedErrorMessage), func(t *testing.T) {
-			err := tc.manager.put(tc.sourceData, tc.value)
+		t.Run(fmt.Sprintf("arraySlicedNode.put(%v)=%v", tc.data, tc.expectedErrorMessage), func(t *testing.T) {
+			err := tc.manager.put(tc.data, tc.value)
 			if (err == nil && len(tc.expectedErrorMessage) > 0) || (err != nil && err.Error() != tc.expectedErrorMessage) {
 				t.Errorf("Expected error '%#v', but got '%#v'", tc.expectedErrorMessage, err.Error())
 			}
-			if !cmp.Equal(tc.expectedUpdatedData, tc.sourceData) {
-				t.Errorf("Expected '%#v', but got '%#v'", tc.expectedUpdatedData, tc.sourceData)
+			if !cmp.Equal(tc.expectedUpdatedData, tc.data) {
+				t.Errorf("Expected '%#v', but got '%#v'", tc.expectedUpdatedData, tc.data)
 			}
 		})
 	}
@@ -537,7 +465,7 @@ func TestArrayFilteredNodeGet(t *testing.T) {
 				op:    "<",
 				value: 10,
 			},
-			sourceData: map[string]any{
+			data: map[string]any{
 				"books": []any{
 					map[string]any{"price": 20, "title": "Book1"},
 					map[string]any{"price": 5, "title": "Book2"},
@@ -556,7 +484,7 @@ func TestArrayFilteredNodeGet(t *testing.T) {
 				op:    ">",
 				value: 5,
 			},
-			sourceData: map[string]any{
+			data: map[string]any{
 				"books": []any{
 					map[string]any{"price": 20, "title": "Book1"},
 					map[string]any{"price": 5, "title": "Book2"},
@@ -576,7 +504,7 @@ func TestArrayFilteredNodeGet(t *testing.T) {
 				op:    "==",
 				value: 5,
 			},
-			sourceData: map[string]any{
+			data: map[string]any{
 				"books": []any{
 					map[string]any{"price": 20, "title": "Book1"},
 					map[string]any{"price": 5, "title": "Book2"},
@@ -595,7 +523,7 @@ func TestArrayFilteredNodeGet(t *testing.T) {
 				op:    "!=",
 				value: 5,
 			},
-			sourceData: map[string]any{
+			data: map[string]any{
 				"books": []any{
 					map[string]any{"price": 20, "title": "Book1"},
 					map[string]any{"price": 5, "title": "Book2"},
@@ -615,7 +543,7 @@ func TestArrayFilteredNodeGet(t *testing.T) {
 				op:    ">",
 				value: "5",
 			},
-			sourceData: map[string]any{
+			data: map[string]any{
 				"books": []any{
 					map[string]any{"price": 20, "title": "Book1"},
 					map[string]any{"price": 5, "title": "Book2"},
@@ -635,7 +563,7 @@ func TestArrayFilteredNodeGet(t *testing.T) {
 				op:    ">",
 				value: "20.1",
 			},
-			sourceData: map[string]any{
+			data: map[string]any{
 				"books": []any{
 					map[string]any{"price": 20, "title": "Book1"},
 					map[string]any{"price": 5, "title": "Book2"},
@@ -654,7 +582,7 @@ func TestArrayFilteredNodeGet(t *testing.T) {
 				op:    ">",
 				value: 20.1,
 			},
-			sourceData: map[string]any{
+			data: map[string]any{
 				"books": []any{
 					map[string]any{"price": "20", "title": "Book1"},
 					map[string]any{"price": "5", "title": "Book2"},
@@ -673,7 +601,7 @@ func TestArrayFilteredNodeGet(t *testing.T) {
 				op:    ">",
 				value: "20.1",
 			},
-			sourceData: map[string]any{
+			data: map[string]any{
 				"books": []any{
 					map[string]any{"price": "20", "title": "Book1"},
 					map[string]any{"price": "5", "title": "Book2"},
@@ -690,7 +618,7 @@ func TestArrayFilteredNodeGet(t *testing.T) {
 				node: node{name: "books"},
 				key:  "price",
 			},
-			sourceData: map[string]any{
+			data: map[string]any{
 				"books": []any{
 					map[string]any{"price": 20, "title": "Book1"},
 					map[string]any{"price": 5, "title": "Book2"},
@@ -710,7 +638,7 @@ func TestArrayFilteredNodeGet(t *testing.T) {
 				op:    "==",
 				value: "Nietzsche",
 			},
-			sourceData: map[string]any{
+			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
 					map[string]any{"author": "Nietzsche", "title": "Book2"},
@@ -730,7 +658,7 @@ func TestArrayFilteredNodeGet(t *testing.T) {
 				op:    "!=",
 				value: "Nietzsche",
 			},
-			sourceData: map[string]any{
+			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
 					map[string]any{"author": "Nietzsche", "title": "Book2"},
@@ -749,8 +677,8 @@ func TestArrayFilteredNodeGet(t *testing.T) {
 				op:    "!=",
 				value: "Nietzsche",
 			},
-			sourceData:           []any{1, 2, 3},
-			expectedErrorMessage: "SourceValidationError: Source is not a map: '[]interface {}{1, 2, 3}'",
+			data:                 map[string]any{"book": []any{1, 2, 3}},
+			expectedErrorMessage: "dataValidationError: Source key not found: 'books'",
 		},
 		{
 			manager: arrayFilteredNode{
@@ -759,24 +687,14 @@ func TestArrayFilteredNodeGet(t *testing.T) {
 				op:    "!=",
 				value: "Nietzsche",
 			},
-			sourceData:           map[string]any{"book": []any{1, 2, 3}},
-			expectedErrorMessage: "SourceValidationError: Source key not found: 'books'",
-		},
-		{
-			manager: arrayFilteredNode{
-				node:  node{name: "books"},
-				key:   "author",
-				op:    "!=",
-				value: "Nietzsche",
-			},
-			sourceData:           map[string]any{"books": 1},
-			expectedErrorMessage: "SourceValidationError: Value of key 'books' is not an array: 1",
+			data:                 map[string]any{"books": 1},
+			expectedErrorMessage: "dataValidationError: Value of key 'books' is not an array: 1",
 		},
 	}
 
 	for i, tc := range testCases {
-		t.Run(fmt.Sprintf("%d: arrayFilteredNode.get(%v)=%v", i, tc.sourceData, tc.expectedData), func(t *testing.T) {
-			data, err := tc.manager.get(tc.sourceData)
+		t.Run(fmt.Sprintf("%d: arrayFilteredNode.get(%v)=%v", i, tc.data, tc.expectedData), func(t *testing.T) {
+			data, err := tc.manager.get(tc.data)
 
 			if (err == nil && len(tc.expectedErrorMessage) > 0) || (err != nil && err.Error() != tc.expectedErrorMessage) {
 				t.Errorf("Expected error '%#v', but got '%#v'", tc.expectedErrorMessage, err.Error())
@@ -798,7 +716,7 @@ func TestArrayFilteredNodePut(t *testing.T) {
 				op:    "<",
 				value: 10,
 			},
-			sourceData: map[string]any{
+			data: map[string]any{
 				"books": []any{
 					map[string]any{"price": 20, "title": "Book1"},
 					map[string]any{"price": 5, "title": "Book2"},
@@ -822,7 +740,7 @@ func TestArrayFilteredNodePut(t *testing.T) {
 				op:    ">",
 				value: 5,
 			},
-			sourceData: map[string]any{
+			data: map[string]any{
 				"books": []any{
 					map[string]any{"price": 20, "title": "Book1"},
 					map[string]any{"price": 5, "title": "Book2"},
@@ -846,7 +764,7 @@ func TestArrayFilteredNodePut(t *testing.T) {
 				op:    "==",
 				value: 5,
 			},
-			sourceData: map[string]any{
+			data: map[string]any{
 				"books": []any{
 					map[string]any{"price": 20, "title": "Book1"},
 					map[string]any{"price": 5, "title": "Book2"},
@@ -870,7 +788,7 @@ func TestArrayFilteredNodePut(t *testing.T) {
 				op:    "==",
 				value: "5",
 			},
-			sourceData: map[string]any{
+			data: map[string]any{
 				"books": []any{
 					map[string]any{"price": 20, "title": "Book1"},
 					map[string]any{"price": 5, "title": "Book2"},
@@ -894,7 +812,7 @@ func TestArrayFilteredNodePut(t *testing.T) {
 				op:    "!=",
 				value: 5,
 			},
-			sourceData: map[string]any{
+			data: map[string]any{
 				"books": []any{
 					map[string]any{"price": 20, "title": "Book1"},
 					map[string]any{"price": 5, "title": "Book2"},
@@ -918,7 +836,7 @@ func TestArrayFilteredNodePut(t *testing.T) {
 				op:    ">",
 				value: "20.1",
 			},
-			sourceData: map[string]any{
+			data: map[string]any{
 				"books": []any{
 					map[string]any{"price": 20, "title": "Book1"},
 					map[string]any{"price": 5, "title": "Book2"},
@@ -942,7 +860,7 @@ func TestArrayFilteredNodePut(t *testing.T) {
 				op:    ">",
 				value: 20.1,
 			},
-			sourceData: map[string]any{
+			data: map[string]any{
 				"books": []any{
 					map[string]any{"price": 20, "title": "Book1"},
 					map[string]any{"price": 5, "title": "Book2"},
@@ -964,7 +882,7 @@ func TestArrayFilteredNodePut(t *testing.T) {
 				node: node{name: "books"},
 				key:  "price",
 			},
-			sourceData: map[string]any{
+			data: map[string]any{
 				"books": []any{
 					map[string]any{"price": 20, "title": "Book1"},
 					map[string]any{"price": 5, "title": "Book2"},
@@ -988,7 +906,7 @@ func TestArrayFilteredNodePut(t *testing.T) {
 				op:    "==",
 				value: "Nietzsche",
 			},
-			sourceData: map[string]any{
+			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
 					map[string]any{"author": "Nietzsche", "title": "Book2"},
@@ -1012,7 +930,7 @@ func TestArrayFilteredNodePut(t *testing.T) {
 				op:    "!=",
 				value: "Nietzsche",
 			},
-			sourceData: map[string]any{
+			data: map[string]any{
 				"books": []any{
 					map[string]any{"author": "Nietzsche", "title": "Book1"},
 					map[string]any{"author": "Nietzsche", "title": "Book2"},
@@ -1036,21 +954,9 @@ func TestArrayFilteredNodePut(t *testing.T) {
 				op:    "!=",
 				value: "Nietzsche",
 			},
-			sourceData:           []any{1, 2, 3},
+			data:                 map[string]any{"book": []any{1, 2, 3}},
 			value:                100,
-			expectedErrorMessage: "SourceValidationError: Source is not a map: '[]interface {}{1, 2, 3}'",
-			expectedUpdatedData:  []any{1, 2, 3},
-		},
-		{
-			manager: arrayFilteredNode{
-				node:  node{name: "books"},
-				key:   "author",
-				op:    "!=",
-				value: "Nietzsche",
-			},
-			sourceData:           map[string]any{"book": []any{1, 2, 3}},
-			value:                100,
-			expectedErrorMessage: "SourceValidationError: Source key not found: 'books'",
+			expectedErrorMessage: "dataValidationError: Source key not found: 'books'",
 			expectedUpdatedData:  map[string]any{"book": []any{1, 2, 3}},
 		},
 		{
@@ -1060,21 +966,21 @@ func TestArrayFilteredNodePut(t *testing.T) {
 				op:    "!=",
 				value: "Nietzsche",
 			},
-			sourceData:           map[string]any{"books": 1},
+			data:                 map[string]any{"books": 1},
 			value:                100,
-			expectedErrorMessage: "SourceValidationError: Value of key 'books' is not an array: 1",
+			expectedErrorMessage: "dataValidationError: Value of key 'books' is not an array: 1",
 			expectedUpdatedData:  map[string]any{"books": 1},
 		},
 	}
 
 	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("arrayFilteredNode.put(%v)=%v", tc.sourceData, tc.expectedErrorMessage), func(t *testing.T) {
-			err := tc.manager.put(tc.sourceData, tc.value)
+		t.Run(fmt.Sprintf("arrayFilteredNode.put(%v)=%v", tc.data, tc.expectedErrorMessage), func(t *testing.T) {
+			err := tc.manager.put(tc.data, tc.value)
 			if (err == nil && len(tc.expectedErrorMessage) > 0) || (err != nil && err.Error() != tc.expectedErrorMessage) {
 				t.Errorf("Expected error '%#v', but got '%#v'", tc.expectedErrorMessage, err.Error())
 			}
-			if !cmp.Equal(tc.expectedUpdatedData, tc.sourceData) {
-				t.Errorf("Expected '%#v', but got '%#v'", tc.expectedUpdatedData, tc.sourceData)
+			if !cmp.Equal(tc.expectedUpdatedData, tc.data) {
+				t.Errorf("Expected '%#v', but got '%#v'", tc.expectedUpdatedData, tc.data)
 			}
 		})
 	}

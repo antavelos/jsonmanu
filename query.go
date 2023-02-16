@@ -5,12 +5,16 @@ import (
 	"strings"
 )
 
+func jsonPathHasReccursiveDescent(path string) bool {
+	return strings.Contains(path, "..")
+}
+
 // splitJsonPath splits a string based on a `.` separator. However, the string is supposed to be a JSONPath so
 // the case of `@.` shall be specially handled.
-func splitJsonPath(path string) []string {
-	tempPath := strings.Replace(path, "@.", "@:", -1)
+func splitJsonPath(jsonPath string) []string {
+	tempJsonPath := strings.Replace(jsonPath, "@.", "@:", -1)
 
-	tokens := strings.Split(tempPath, ".")
+	tokens := strings.Split(tempJsonPath, ".")
 
 	for i := 0; i < len(tokens); i++ {
 		if strings.Contains(tokens[i], "@:") {
@@ -21,17 +25,17 @@ func splitJsonPath(path string) []string {
 	return tokens
 }
 
-// parse translates a provided JSONPath to an array of node data accessors that can be used to retrieve values from or update a given map.
-func parse(path string) ([]nodeDataAccessor, error) {
-	if !strings.HasPrefix(path, "$.") {
+// parseJsonPath translates a provided JSONPath to an array of node data accessors that can be used to retrieve values from or update a given map.
+func parseJsonPath(jsonPath string) ([]nodeDataAccessor, error) {
+	if !strings.HasPrefix(jsonPath, "$.") {
 		return nil, fmt.Errorf("JSONPath should start with '$.'")
 	}
 
-	if strings.HasSuffix(path, ".") {
+	if strings.HasSuffix(jsonPath, ".") {
 		return nil, fmt.Errorf("JSONPath should not end with '.'")
 	}
 
-	jsonPathSubNodes := splitJsonPath(path)
+	jsonPathSubNodes := splitJsonPath(jsonPath)
 
 	var nodes []nodeDataAccessor
 	for i, jsonPathSubNode := range jsonPathSubNodes[1:] {
@@ -47,9 +51,12 @@ func parse(path string) ([]nodeDataAccessor, error) {
 }
 
 // Get retrieves a value out of a given map or a slice of maps as it is described in the provided JSONPath.
-// `data` has type `any` because it can be either a map or a slice.
-func Get(data any, path string) (any, error) {
-	nodes, err := parse(path)
+//
+// The `data` must not be nil.
+//
+// It returns the retrieved data if everything goes well. Otherwise nil along with the relevant error.
+func Get(data map[string]any, jsonPath string) (any, error) {
+	nodes, err := parseJsonPath(jsonPath)
 	if err != nil {
 		return nil, err
 	}
@@ -62,39 +69,76 @@ func Get(data any, path string) (any, error) {
 	return result, nil
 }
 
+// ensureDataStrunctureFromNodes creates the map tree structure in case in is not present so it can be safely used later by Put.
+// The data argument is any because the function runs reccursively and besides a map it can be of any type.
+func ensureDataStrunctureFromNodes(data any, nodes []nodeDataAccessor) {
+
+	if len(nodes) == 0 {
+		return
+	}
+
+	if isSlice(data) {
+		for item := range iterAny(data, nil) {
+			ensureDataStrunctureFromNodes(item, nodes[1:])
+		}
+	} else if isMap(data) {
+		firstNodeName := nodes[0].getName()
+
+		val, ok := data.(map[string]any)[firstNodeName]
+		if !ok || val == nil {
+			data.(map[string]any)[firstNodeName] = make(map[string]any)
+			val, _ = data.(map[string]any)[firstNodeName]
+		}
+
+		ensureDataStrunctureFromNodes(val, nodes[1:])
+	}
+}
+
 // Put updates the branch(es) of a map or a slice of maps as it is described in the provided JSONPath with a new value.
-// `data` has type `any` because it can be either a map or a slice.
-func Put(data any, path string, value any) error {
-	nodes, err := parse(path)
+//
+// The `data` must not be nil. The changes will apply in place.
+//
+// If the path described in the `jsonPath` does not exist then it will be created on the fly. Attibutes referred within an array condition will be ignored.
+//
+// An error will be returned should anything goes wrong.
+func Put(data map[string]any, jsonPath string, value any) error {
+	nodes, err := parseJsonPath(jsonPath)
 	if err != nil {
 		return err
 	}
 
+	if !jsonPathHasReccursiveDescent(jsonPath) && data != nil {
+		ensureDataStrunctureFromNodes(data, nodes)
+	}
+
 	nodesCount := len(nodes)
 
-	// handle reccursive descent in case the last node is a leaf node and its previous one
-	// is not known, i.e. "$..price"
-	if nodes[nodesCount-2].getName() == "" && !isArrayNode(nodes[nodesCount-1]) {
+	if nodesCount >= 2 && nodes[nodesCount-2].getName() == "" && !isArrayNode(nodes[nodesCount-1]) {
 		return mapPutDeep(data, nodes[nodesCount-1].getName(), value)
 	}
 
 	allButLastNodes, lastNode := nodes[:nodesCount-1], nodes[nodesCount-1]
 
-	data, err = walkNodes(data, allButLastNodes)
+	walkedData, err := walkNodes(data, allButLastNodes)
 	if err != nil {
-		return err
+		switch err.(dataValidationError).errorType {
+		case dataValidationErrorNotMap, dataValidationErrorValueNotArray:
+			return err
+		case dataValidationErrorKeyNotFound:
+			walkedData = data
+		}
 	}
 
-	if isSlice(data) {
-		for _, item := range data.([]any) {
-			if err := lastNode.put(item, value); err != nil {
+	if isSlice(walkedData) {
+		for _, item := range walkedData.([]any) {
+			if err := lastNode.put(item.(map[string]any), value); err != nil {
 				return err
 			}
 		}
 		return nil
 	}
 
-	err = lastNode.put(data, value)
+	err = lastNode.put(walkedData.(map[string]any), value)
 
 	return err
 }

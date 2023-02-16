@@ -1,8 +1,11 @@
 package jsonmanu
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
 )
 
 func isMap(t any) bool {
@@ -15,6 +18,10 @@ func isSlice(t any) bool {
 
 func isMapOrSlice(t any) bool {
 	return isMap(t) || isSlice(t)
+}
+
+func isString(t any) bool {
+	return reflect.ValueOf(t).Kind() == reflect.String
 }
 
 // flattenArray flattens any array of arrays.
@@ -142,6 +149,7 @@ func sendOrQuit[T any](t T, out chan<- T, quit <-chan struct{}) bool {
 // iterMapKeys generates the keys of a given map
 func iterMapKeys(m any, quit <-chan struct{}) <-chan string {
 	out := make(chan string)
+
 	go func() {
 		defer close(out)
 
@@ -153,6 +161,24 @@ func iterMapKeys(m any, quit <-chan struct{}) <-chan string {
 			}
 		}
 	}()
+
+	return out
+}
+
+func iterAny(t any, quit <-chan struct{}) <-chan any {
+	out := make(chan any)
+
+	go func() {
+		defer close(out)
+
+		vm := reflect.ValueOf(t)
+		if vm.Kind() == reflect.Slice {
+			for i := 0; i < vm.Len(); i++ {
+				sendOrQuit(vm.Index(i).Interface(), out, quit)
+			}
+		}
+	}()
+
 	return out
 }
 
@@ -164,4 +190,46 @@ func mapHasKey(m any, key string) bool {
 		}
 	}
 	return false
+}
+
+// toFloat converts any number like value or any string number to float64.
+func toFloat64(value any) (float64, error) {
+	switch v := value.(type) {
+	case int:
+		return float64(v), nil
+	case int8:
+		return float64(v), nil
+	case int16:
+		return float64(v), nil
+	case int32:
+		return float64(v), nil
+	case int64:
+		return float64(v), nil
+	case uint8:
+		return float64(v), nil
+	case uint16:
+		return float64(v), nil
+	case uint32:
+		return float64(v), nil
+	case uint64:
+		return float64(v), nil
+	case float32:
+		return float64(v), nil
+	case float64:
+		return float64(v), nil
+	case string:
+		fv, err := strconv.ParseFloat(v, 1)
+		if err == nil {
+			return fv, nil
+		}
+	}
+	return 0, errors.New("Can't convert to float64")
+}
+
+func prettify(x any) any {
+	b, err := json.MarshalIndent(x, "", "  ")
+	if err != nil {
+		return x
+	}
+	return b
 }
