@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	gu "github.com/antavelos/go-utils"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -392,7 +393,7 @@ func TestMap(t *testing.T) {
 				}
 			}
 			if !cmp.Equal(tc.expectedDst, tc.dst) {
-				t.Errorf("Expected '%s', but got '%s'", prettify(tc.expectedDst), prettify(tc.dst))
+				t.Errorf("Expected '%s', but got '%s'", gu.Prettify(tc.expectedDst), gu.Prettify(tc.dst))
 			}
 		})
 	}

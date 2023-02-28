@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	gu "github.com/antavelos/go-utils"
 )
 
 // Transformer is a type to be used in order to apply some logic on a given value.
@@ -47,7 +49,7 @@ type SplitTransformer struct {
 //
 // If the provided index is -1 then the whole occured array will be returned.
 func (t SplitTransformer) Transform(value any) (any, error) {
-	if !isString(value) {
+	if !gu.IsString(value) {
 		return nil, errors.New("Value is not a string.")
 	}
 
@@ -77,12 +79,12 @@ type JoinTransformer struct {
 //
 // The array elements must implement the String method of the Stringer interface.
 func (t JoinTransformer) Transform(value any) (any, error) {
-	if !isSlice(value) {
+	if !gu.IsSlice(value) {
 		return nil, errors.New("Value is not an array.")
 	}
 
 	var strSlice []string
-	for item := range iterAny(value, nil) {
+	for item := range gu.IterAny(value, nil) {
 		strSlice = append(strSlice, fmt.Sprintf("%v", item))
 	}
 
@@ -103,7 +105,7 @@ type ReplaceTransformer struct {
 //
 // It expects a string value.
 func (t ReplaceTransformer) Transform(value any) (any, error) {
-	if !isString(value) {
+	if !gu.IsString(value) {
 		return nil, errors.New("Value is not a string.")
 	}
 
@@ -123,7 +125,7 @@ type StringMatchTransformer struct {
 //
 // It will return the first matched substring found in the provided value.
 func (t StringMatchTransformer) Transform(value any) (any, error) {
-	if !isString(value) {
+	if !gu.IsString(value) {
 		return nil, errors.New("Value is not a string.")
 	}
 
@@ -151,7 +153,7 @@ type SubStrTransformer struct {
 //
 // If End index is not provided the value will be sliced from Start index to the end of the value.
 func (t SubStrTransformer) Transform(value any) (any, error) {
-	if !isString(value) {
+	if !gu.IsString(value) {
 		return nil, errors.New("Value is not a string.")
 	}
 
@@ -178,7 +180,7 @@ type NumberTransformer struct{}
 //
 // The returned value will be of type `float64` so "123.2" will be transformed to 123.2 and "123" will be transformed to 123.0.
 func (t NumberTransformer) Transform(value any) (any, error) {
-	if !isString(value) {
+	if !gu.IsString(value) {
 		return nil, errors.New("Value is not a string.")
 	}
 

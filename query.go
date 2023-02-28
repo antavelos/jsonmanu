@@ -3,6 +3,8 @@ package jsonmanu
 import (
 	"fmt"
 	"strings"
+
+	gu "github.com/antavelos/go-utils"
 )
 
 func jsonPathHasReccursiveDescent(path string) bool {
@@ -77,11 +79,11 @@ func ensureDataStrunctureFromNodes(data any, nodes []nodeDataAccessor) {
 		return
 	}
 
-	if isSlice(data) {
-		for item := range iterAny(data, nil) {
+	if gu.IsSlice(data) {
+		for item := range gu.IterAny(data, nil) {
 			ensureDataStrunctureFromNodes(item, nodes[1:])
 		}
-	} else if isMap(data) {
+	} else if gu.IsMap(data) {
 		firstNodeName := nodes[0].getName()
 
 		val, ok := data.(map[string]any)[firstNodeName]
@@ -114,7 +116,7 @@ func Put(data map[string]any, jsonPath string, value any) error {
 	nodesCount := len(nodes)
 
 	if nodesCount >= 2 && nodes[nodesCount-2].getName() == "" && !isArrayNode(nodes[nodesCount-1]) {
-		return mapPutDeep(data, nodes[nodesCount-1].getName(), value)
+		return gu.MapPutDeep(data, nodes[nodesCount-1].getName(), value)
 	}
 
 	allButLastNodes, lastNode := nodes[:nodesCount-1], nodes[nodesCount-1]
@@ -129,7 +131,7 @@ func Put(data map[string]any, jsonPath string, value any) error {
 		}
 	}
 
-	if isSlice(walkedData) {
+	if gu.IsSlice(walkedData) {
 		for _, item := range walkedData.([]any) {
 			if err := lastNode.put(item.(map[string]any), value); err != nil {
 				return err

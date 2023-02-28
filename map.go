@@ -2,6 +2,8 @@ package jsonmanu
 
 import (
 	"fmt"
+
+	gu "github.com/antavelos/go-utils"
 )
 
 // Mapper holds the configuration of a mapping from a certain data structure to another one.
@@ -21,7 +23,7 @@ type Mapper struct {
 func handleSlideTransformation(value any, transformer Transformer) (any, error) {
 	var transArray []any
 	i := 0
-	for item := range iterAny(value, nil) {
+	for item := range gu.IterAny(value, nil) {
 		transItem, err := transformer.Transform(item)
 		if err != nil {
 			return value, fmt.Errorf("Array[%v]: %v", i, err)
@@ -46,7 +48,7 @@ func handleMapper(src map[string]any, dst map[string]any, mapper Mapper) error {
 	}
 
 	for i, transformation := range mapper.Transformations {
-		if isSlice(srcValue) {
+		if gu.IsSlice(srcValue) {
 			if transformation.AsArray {
 				srcValue, err = transformation.Trsnfmr.Transform(srcValue)
 			} else {

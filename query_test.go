@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	gu "github.com/antavelos/go-utils"
 	cmp "github.com/google/go-cmp/cmp"
 )
 
@@ -1093,7 +1094,7 @@ func TestPut(t *testing.T) {
 				t.Errorf("Expected error message '%#v', but got '%#v'", tc.expectedErrorMessage, err.Error())
 			}
 			if !cmp.Equal(tc.expectedUpdatedData, tc.data) {
-				t.Errorf("Expected '%#s', but got '%#s'", prettify(tc.expectedUpdatedData), prettify(tc.data))
+				t.Errorf("Expected '%#s', but got '%#s'", gu.Prettify(tc.expectedUpdatedData), gu.Prettify(tc.data))
 			}
 		})
 	}

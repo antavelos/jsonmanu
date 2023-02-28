@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	gu "github.com/antavelos/go-utils"
 )
 
 // Full array JSONPath pattern.
@@ -123,14 +125,14 @@ func validateNodeData(n nodeDataAccessor, data map[string]any) error {
 		return dataValidationError{data: data, errorType: dataValidationErrorNotMap}
 	}
 
-	if !mapHasKey(data, nodeName) {
+	if !gu.MapHasKey(data, nodeName) {
 		return dataValidationError{key: nodeName, errorType: dataValidationErrorKeyNotFound}
 	}
 
 	if isArrayNode(n) {
 		value, _ := data[nodeName]
 
-		if !isSlice(value) {
+		if !gu.IsSlice(value) {
 			return dataValidationError{key: nodeName, value: value, errorType: dataValidationErrorValueNotArray}
 		}
 	}
@@ -287,8 +289,8 @@ func (n arraySlicedNode) getName() string { return n.node.name }
 // The operator can be one of `=`, `!“, `<`, `>`, `<=`, `>=`
 // First a comparison will be attempted between floats (if applicable) and then between strings (if applicable)
 func assertCondition(val1 any, val2 any, op string) bool {
-	fval1, err1 := toFloat64(val1)
-	fval2, err2 := toFloat64(val2)
+	fval1, err1 := gu.ToFloat64(val1)
+	fval2, err2 := gu.ToFloat64(val2)
 	areFloats := err1 == nil && err2 == nil
 
 	switch op {
@@ -296,42 +298,42 @@ func assertCondition(val1 any, val2 any, op string) bool {
 		if areFloats {
 			return fval1 < fval2
 		}
-		if isString(val1) && isString(val2) {
+		if gu.IsString(val1) && gu.IsString(val2) {
 			return val1.(string) < val2.(string)
 		}
 	case ">":
 		if areFloats {
 			return fval1 > fval2
 		}
-		if isString(val1) && isString(val2) {
+		if gu.IsString(val1) && gu.IsString(val2) {
 			return val1.(string) < val2.(string)
 		}
 	case "<=":
 		if areFloats {
 			return fval1 <= fval2
 		}
-		if isString(val1) && isString(val2) {
+		if gu.IsString(val1) && gu.IsString(val2) {
 			return val1.(string) <= val2.(string)
 		}
 	case ">=":
 		if areFloats {
 			return fval1 >= fval2
 		}
-		if isString(val1) && isString(val2) {
+		if gu.IsString(val1) && gu.IsString(val2) {
 			return val1.(string) >= val2.(string)
 		}
 	case "==":
 		if areFloats {
 			return fval1 == fval2
 		}
-		if isString(val1) && isString(val2) {
+		if gu.IsString(val1) && gu.IsString(val2) {
 			return val1.(string) == val2.(string)
 		}
 	case "!=":
 		if areFloats {
 			return fval1 != fval2
 		}
-		if isString(val1) && isString(val2) {
+		if gu.IsString(val1) && gu.IsString(val2) {
 			return val1.(string) != val2.(string)
 		}
 	}
@@ -517,7 +519,7 @@ func walkNodes(data map[string]any, nodes []nodeDataAccessor) (walkedData any, e
 			continue
 		}
 
-		if isSlice(walkedData) {
+		if gu.IsSlice(walkedData) {
 			var items []any
 			for _, item := range walkedData.([]any) {
 				value, err := n.get(item.(map[string]any))
@@ -531,7 +533,7 @@ func walkNodes(data map[string]any, nodes []nodeDataAccessor) (walkedData any, e
 		}
 
 		if prevHasReccursiveDescent {
-			walkedData = mapGetDeepFlattened(walkedData, n.getName())
+			walkedData = gu.MapGetDeepFlattened(walkedData, n.getName())
 			if isArrayNode(n) {
 				walkedDataWithkey := map[string]any{n.getName(): walkedData}
 				walkedData, err = n.get(walkedDataWithkey)
